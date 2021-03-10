@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/jwtlited
+jwtlited*.so
+jwtlited*.dylib
+jwtlited*.dll
+*jwtlited*.a
+jwtlited*.lib
+*.exe
+*.o
+*.obj
+*.lst
+*-test-*

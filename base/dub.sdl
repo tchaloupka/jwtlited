@@ -1,0 +1,3 @@
+name "base"
+
+dependency "bc-string" version=">=1.0.0"

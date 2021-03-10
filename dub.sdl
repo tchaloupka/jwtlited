@@ -1,0 +1,12 @@
+name "jwtlited"
+description "Fast and lightweight JSON Web Token Dlang implementation."
+authors "Tomáš Chaloupka"
+copyright "Copyright © 2021, Tomáš Chaloupka"
+license "BSL-1.0"
+targetType "none"
+
+subPackage "base"
+subPackage "openssl"
+subPackage "phobos"
+
+dependency ":base" version="*"

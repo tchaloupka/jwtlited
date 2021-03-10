@@ -1,0 +1,4 @@
+name "openssl"
+
+dependency "jwtlited:base" version="*"
+dependency "openssl" version=">=2.0.1+1.1.0h"
