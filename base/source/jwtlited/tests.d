@@ -159,10 +159,35 @@ void evalTest(K)(auto ref K key, ref immutable(TestCase) tc) @safe
     import std.algorithm : filter;
     import core.memory : GC;
 
-    auto pre = () @trusted { return GC.stats(); }();
+    immutable pre = () @trusted { return GC.stats(); }();
     foreach (tc; testCases.filter!(a => a.alg == JWTAlgorithm.none))
     {
-        evalTest(None.init, tc);
+        evalTest(NoneHandler.init, tc);
     }
     assert((() @trusted { return GC.stats().usedSize; }() - pre.usedSize) == 0); // check for no GC allocations
+}
+
+@("AnyAlgValidator")
+@safe unittest
+{
+    // valid token
+    enum tok = "eyJhbGciOiJub25lIn0.eyJmb28iOiJiYXIifQ.";
+    enum hdr = `{"alg":"none"}`;
+    enum pay = `{"foo":"bar"}`;
+    ubyte[64] bh, bp;
+
+    // decode header and payload
+    assert(decode(AnyAlgValidator.init, tok, bh[], bp[]));
+    assert(bh[0..hdr.length] == hdr);
+    assert(bp[0..pay.length] == pay);
+
+    // decode payload
+    assert(decode(AnyAlgValidator.init, tok, bp[]));
+    assert(bp[0..pay.length] == pay);
+
+    // just validate
+    assert(validate(AnyAlgValidator.init, tok));
+
+    // invalid base64 signature
+    assert(!validate(AnyAlgValidator.init, "eyJhbGciOiJub25lIn0.eyJmb28iOiJiYXIifQ.blabla!"));
 }

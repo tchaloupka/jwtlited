@@ -8,10 +8,17 @@ import jwtlited.tests;
 @("JWTAlgorithm.none")
 @safe unittest
 {
+    static void eval(H)(ref immutable TestCase tc)
+    {
+        H h;
+        assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+        evalTest(h, tc);
+    }
+
     import core.memory : GC;
     import std.algorithm : canFind, filter;
 
-    auto pre = () @trusted { return GC.stats(); }();
+    immutable pre = () @trusted { return GC.stats(); }();
 
     with (JWTAlgorithm)
     {
@@ -26,26 +33,18 @@ import jwtlited.tests;
             final switch (tc.alg)
             {
                 case none: assert(0);
-                case HS256:
-                case HS384:
-                case HS512:
-                    HMAC k;
-                    assert(k.loadKey(tc.key, tc.alg) == !!(tc.valid & Valid.key));
-                    evalTest(k, tc);
-                    break;
+                case HS256: eval!HS256Handler(tc); break;
+                case HS384: eval!HS384Handler(tc); break;
+                case HS512: eval!HS512Handler(tc); break;
 
                 case RS256:
                 case RS384:
                 case RS512:
                     break;
 
-                case ES256:
-                case ES384:
-                case ES512:
-                    ECDSA k;
-                    assert(k.loadKey(tc.key, tc.alg) == !!(tc.valid & Valid.key));
-                    evalTest(k, tc);
-                    break;
+                case ES256: eval!ES256Handler(tc); break;
+                case ES384: eval!ES384Handler(tc); break;
+                case ES512: eval!ES512Handler(tc); break;
             }
         }
     }

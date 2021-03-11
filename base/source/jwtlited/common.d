@@ -28,25 +28,33 @@ unittest
 
 template isValidator(V)
 {
-    enum isValidator = __traits(hasMember, V, "alg") && __traits(hasMember, V, "isValid");
+    enum isValidator = __traits(hasMember, V, "isValidAlg") && __traits(hasMember, V, "isValid");
 }
 
 template isSigner(S)
 {
-    enum isSigner = __traits(hasMember, S, "alg") && __traits(hasMember, S, "sign");
+    enum isSigner = __traits(hasMember, S, "signAlg") && __traits(hasMember, S, "sign");
 }
 
 /**
- * Structure that can be used to handle tokens without signatures
+ * Structure that can be used to handle tokens without signatures.
+ * Requires that the token has `"alg": "none"` in the header and no sign part.
  */
-struct None
+struct NoneHandler
 {
-    immutable JWTAlgorithm alg = JWTAlgorithm.none;
+    @safe pure nothrow @nogc:
+
+    bool isValidAlg(JWTAlgorithm alg)
+    {
+        return alg == JWTAlgorithm.none;
+    }
 
     bool isValid(V, S)(V value, S sign) if (isToken!V && isToken!S)
     {
         return sign.length == 0;
     }
+
+    JWTAlgorithm signAlg() { return JWTAlgorithm.none; }
 
     int sign(S, V)(auto ref S sink, auto ref V value)
     {
@@ -56,8 +64,29 @@ struct None
 
 unittest
 {
-    static assert(isValidator!None);
-    static assert(isSigner!None);
+    static assert(isValidator!NoneHandler);
+    static assert(isSigner!NoneHandler);
+}
+
+/**
+ * Validator that accepts any JWT algorithm and ignores it's signature at all.
+ */
+struct AnyAlgValidator
+{
+    @safe pure nothrow @nogc:
+
+    bool isValidAlg(JWTAlgorithm alg) { return true; }
+
+    bool isValid(V, S)(V value, S sign) if (isToken!V && isToken!S)
+    {
+        return true;
+    }
+}
+
+unittest
+{
+    static assert(isValidator!AnyAlgValidator);
+    static assert(!isSigner!AnyAlgValidator);
 }
 
 package (jwtlited)
