@@ -129,6 +129,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
         else static if (implAlg == JWTAlgorithm.ES512) alias evp = EVP_sha512;
     }
 
+    @disable this(this);
+
     ~this() @trusted
     {
         if (pubkey) EVP_PKEY_free(pubkey);
