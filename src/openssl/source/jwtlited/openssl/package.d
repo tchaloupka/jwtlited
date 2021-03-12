@@ -18,6 +18,7 @@ extern(C) nothrow @nogc
     void EVP_MD_CTX_free(EVP_MD_CTX* ctx);
     EVP_MD_CTX* EVP_MD_CTX_new();
     int ECDSA_SIG_set0(ECDSA_SIG* sig, BIGNUM* r, BIGNUM* s);
+    void ECDSA_SIG_get0(const(ECDSA_SIG)* sig, const BIGNUM** pr, const BIGNUM** ps);
 }
 
 alias HS256Handler = HMACImpl!(JWTAlgorithm.HS256);
@@ -113,8 +114,10 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 {
     private
     {
-        EVP_PKEY* pubkey;
-        EVP_MD_CTX* mdctx;
+        EVP_PKEY* pubKey;
+        EVP_PKEY* privKey;
+        EVP_MD_CTX* mdctxPriv;
+        EVP_MD_CTX* mdctxPub;
 
         import std.algorithm : among;
         static if (implAlg.among(JWTAlgorithm.ES256, JWTAlgorithm.ES384, JWTAlgorithm.ES512))
@@ -133,8 +136,10 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 
     ~this() @trusted
     {
-        if (pubkey) EVP_PKEY_free(pubkey);
-        if (mdctx) EVP_MD_CTX_free(mdctx);
+        if (pubKey) EVP_PKEY_free(pubKey);
+        if (privKey) EVP_PKEY_free(privKey);
+        if (mdctxPub) EVP_MD_CTX_free(mdctxPub);
+        if (mdctxPriv) EVP_MD_CTX_free(mdctxPriv);
     }
 
     bool loadKey(K)(K key) @trusted if (isToken!K)
@@ -146,38 +151,58 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
         scope (exit) BIO_free(bpo);
 
         // TODO: Uses OpenSSL's default passphrase callbacks if needed.
-        pubkey = PEM_read_bio_PUBKEY(bpo, null, null, null);
-        if (!pubkey)
+        pubKey = PEM_read_bio_PUBKEY(bpo, null, null, null);
+        if (!pubKey)
         {
             version (assert) ERR_print_errors_fp(stderr);
             return false;
         }
 
-        auto pkeyType = EVP_PKEY_id(pubkey);
+        auto pkeyType = EVP_PKEY_id(pubKey);
         if (pkeyType != type) return false;
 
         // Convert EC sigs back to ASN1.
         static if (type == EVP_PKEY_EC)
         {
             // Get the actual ec_key
-            auto ec_key = EVP_PKEY_get1_EC_KEY(pubkey);
+            auto ec_key = EVP_PKEY_get1_EC_KEY(pubKey);
             if (!ec_key) onOutOfMemoryError();
-            auto degree = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
+            immutable degree = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
             EC_KEY_free(ec_key);
 
-            auto bn_len = (degree + 7) / 8;
+            immutable bn_len = (degree + 7) / 8;
             slen = bn_len * 2;
         }
 
-        mdctx = EVP_MD_CTX_new();
-        if (!mdctx) onOutOfMemoryError();
+        mdctxPub = EVP_MD_CTX_new();
+        if (!mdctxPub) onOutOfMemoryError();
 
         return true;
     }
 
-    bool loadPKey(K)(K key)
+    bool loadPKey(K)(K key) @trusted if (isToken!K)
     {
-        return false;
+        if (!key.length) return false;
+
+        BIO* bpo = BIO_new_mem_buf(cast(char*)key.ptr, cast(int)key.length);
+        if (!bpo) onOutOfMemoryError;
+        scope (exit) BIO_free(bpo);
+
+        // TODO: Uses OpenSSL's default passphrase callbacks if needed.
+        privKey = PEM_read_bio_PrivateKey(bpo, null, null, null);
+        if (!privKey)
+        {
+            version (assert) ERR_print_errors_fp(stderr);
+            return false;
+        }
+
+        auto pkeyType = EVP_PKEY_id(privKey);
+        if (pkeyType != type) return false;
+
+        mdctxPriv = EVP_MD_CTX_new();
+        if (!mdctxPriv) onOutOfMemoryError();
+
+        return true;
     }
 
     bool isValidAlg(JWTAlgorithm alg) { return implAlg == alg; }
@@ -190,8 +215,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
         {
             if (sign.length != slen) return false;
 
-            ubyte[71] sbuf;
-            int bn_len = slen / 2;
+            ubyte[72] sbuf;
+            immutable bn_len = slen / 2;
             auto ec_sig_r = BN_bin2bn(sign.ptr, bn_len, null);
             auto ec_sig_s = BN_bin2bn(sign.ptr + bn_len, bn_len, null);
             if (!ec_sig_r || !ec_sig_s) return false;
@@ -201,28 +226,27 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
             scope (exit) ECDSA_SIG_free(ec_sig);
             if (ECDSA_SIG_set0(ec_sig, ec_sig_r, ec_sig_s) != 1) return false;
 
-            auto ch_slen = i2d_ECDSA_SIG(ec_sig, null);
-            assert(ch_slen <= sbuf.length);
+            auto siglen = i2d_ECDSA_SIG(ec_sig, null);
+            assert(siglen <= sbuf.length);
             auto p = &sbuf[0];
-            ch_slen = i2d_ECDSA_SIG(ec_sig, &p);
-            if (ch_slen == 0) return false;
+            siglen = i2d_ECDSA_SIG(ec_sig, &p);
+            if (siglen == 0) return false;
             auto psig = &sbuf[0];
-            auto siglen = ch_slen;
         }
         else
         {
             auto psig = sign.ptr;
-            auto siglen = sign.length;
+            immutable siglen = cast(int)sign.length;
         }
 
         // Initialize the DigestVerify operation using evp algorithm
-        if (EVP_DigestVerifyInit(mdctx, null, evp, null, pubkey) != 1)
+        if (EVP_DigestVerifyInit(mdctxPub, null, evp, null, pubKey) != 1)
             return false;
 
-        if (EVP_DigestVerifyUpdate(mdctx, value.ptr, value.length) != 1)
+        if (EVP_DigestVerifyUpdate(mdctxPub, value.ptr, value.length) != 1)
             return false;
 
-        auto ret = EVP_DigestVerifyFinal(mdctx, psig, siglen);
+        auto ret = EVP_DigestVerifyFinal(mdctxPub, psig, siglen);
         if (ret == -1)
         {
             version (assert) ERR_print_errors_fp(stderr);
@@ -233,16 +257,95 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 
     JWTAlgorithm signAlg() { return implAlg; }
 
-    int sign(S, V)(auto ref S sink, auto ref V value)
+    int sign(S, V)(auto ref S sink, auto ref V value) @trusted
     {
-        return 0;
+        import std.algorithm : copy;
+
+        // Initialize the DigestSign operation using alg
+        if (EVP_DigestSignInit(mdctxPriv, null, evp, null, privKey) != 1)
+            return -1;
+
+        // Call update with the message
+        if (EVP_DigestSignUpdate(mdctxPriv, value.ptr, value.length) != 1)
+            return -1;
+
+        // First, call EVP_DigestSignFinal with a null sig parameter to get length of sig.
+        ubyte[512] sig;
+        size_t slen;
+        if (EVP_DigestSignFinal(mdctxPriv, null, &slen) != 1)
+            return -1;
+
+        assert(sig.length >= slen);
+
+        // Get the signature with real length
+        if (EVP_DigestSignFinal(mdctxPriv, &sig[0], &slen) != 1)
+            return -1;
+
+        static if (type != EVP_PKEY_EC) sig[0..slen].copy(sink); // just return the signature as is
+        else
+        {
+            // For EC we need to convert to a raw format of R/S.
+            auto ec_key = EVP_PKEY_get1_EC_KEY(privKey); // Get the actual ec_key
+            if (!ec_key) onOutOfMemoryError();
+            immutable degree = EC_GROUP_get_degree(EC_KEY_get0_group(ec_key));
+            EC_KEY_free(ec_key);
+
+            // Get the sig from the DER encoded version
+            ubyte* ps = cast(ubyte*)sig.ptr;
+            auto ec_sig = d2i_ECDSA_SIG(null, cast(const(ubyte)**)&ps, slen);
+            if (!ec_sig) onOutOfMemoryError();
+            scope (exit) ECDSA_SIG_free(ec_sig);
+
+            const BIGNUM* ec_sig_r;
+            const BIGNUM* ec_sig_s;
+            ECDSA_SIG_get0(ec_sig, &ec_sig_r, &ec_sig_s);
+            immutable r_len = BN_num_bytes(ec_sig_r);
+            immutable s_len = BN_num_bytes(ec_sig_s);
+            immutable bn_len = (degree + 7) / 8;
+            if ((r_len > bn_len) || (s_len > bn_len))
+                return -1;
+
+            ubyte[512] buf;
+            slen = 2 * bn_len;
+            assert(buf.length >= slen);
+
+            // Pad the bignums with leading zeroes
+            BN_bn2bin(ec_sig_r, buf.ptr + bn_len - r_len);
+            BN_bn2bin(ec_sig_s, buf.ptr + slen - s_len);
+
+            buf[0..slen].copy(sink);
+        }
+
+        return cast(int)slen;
     }
 }
 
-unittest
+@safe unittest
 {
     static assert(isValidator!HS256Handler);
     static assert(isSigner!HS256Handler);
     static assert(isValidator!ES256Handler);
     static assert(isSigner!ES256Handler);
+}
+
+@safe unittest
+{
+    auto pkey = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
+AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
+5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END EC PRIVATE KEY-----`;
+
+    auto pubkey = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
+NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END PUBLIC KEY-----`;
+
+    ES256Handler h;
+    assert(h.loadPKey(pkey));
+    assert(h.loadKey(pubkey));
+    char[512] token;
+    auto len = h.encode(token[], `{"foo":42}`);
+    assert(len > 0);
+    assert(h.validate(token[0..len]));
 }
