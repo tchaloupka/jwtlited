@@ -5,8 +5,8 @@ copyright "Copyright © 2021, Tomáš Chaloupka"
 license "BSL-1.0"
 targetType "none"
 
-subPackage "base"
-subPackage "openssl"
-subPackage "phobos"
+subPackage "src/base"
+subPackage "src/openssl"
+// subPackage "src/phobos"
 
 dependency ":base" version="*"
