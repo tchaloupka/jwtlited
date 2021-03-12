@@ -18,7 +18,7 @@ import jwtlited.openssl;
 
 enum HMAC_SECRET = "foobarbaz123456";
 enum PAYLOAD = `{"sub":"1234567890","name":"John Doe","iat":1516239022}`;
-enum CYCLES = "10000";
+enum CYCLES = "500000";
 
 int main()
 {
@@ -100,7 +100,7 @@ int main()
 void genChart(string name, string yAxisName, string data, string[] colNames)
 {
     Appender!string chart;
-    chart.formattedWrite!`set output "%s.png"
+    chart.formattedWrite!`set output "results/%s.png"
 set terminal pngcairo font "arial,10" size 1280,720
 set style data histogram
 set style histogram cluster gap 1
