@@ -198,6 +198,7 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 
             auto ec_sig = ECDSA_SIG_new();
             if (!ec_sig) onOutOfMemoryError;
+            scope (exit) ECDSA_SIG_free(ec_sig);
             if (ECDSA_SIG_set0(ec_sig, ec_sig_r, ec_sig_s) != 1) return false;
 
             auto ch_slen = i2d_ECDSA_SIG(ec_sig, null);
