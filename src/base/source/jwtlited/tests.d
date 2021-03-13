@@ -38,6 +38,18 @@ struct TestCase
     string token;
 }
 
+enum EC_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
+NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END PUBLIC KEY-----`;
+
+enum EC_PRIVKEY = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
+AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
+5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END EC PRIVATE KEY-----`;
+
+/// Test cases to test correct validation and signature used with all implementations
 immutable TestCase[] testCases = [
     // NONE
     TestCase(
@@ -67,6 +79,7 @@ immutable TestCase[] testCases = [
     TestCase("NONE - invalid token 3", JWTAlgorithm.none, Test.decode, Valid.none, null, null, null, "aa.bb"),
     TestCase("NONE - invalid token 4", JWTAlgorithm.none, Test.decode, Valid.none, null, null, null, "aa."),
     TestCase("NONE - invalid token 5", JWTAlgorithm.none, Test.decode, Valid.none, null, null, null, "aa"),
+
     // HMAC
     TestCase(
         "HS256 - valid decode",
@@ -105,49 +118,49 @@ immutable TestCase[] testCases = [
         "FOOBARBAZ", null, null,
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.B02AWclotXRccJUoyHFSpYHMfg4gUvy4cvFrqwMracg",
     ),
+
     // ECDSA
     TestCase(
-        "ES256 - valid decode",
+        "ES256 - valid",
         JWTAlgorithm.ES256,
-        Test.decode, Valid.all,
-        `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
-NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
------END PUBLIC KEY-----`,
-        null,
-        `{"iat":1615393469,"exp":1615394069}`,
-        "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2MTUzOTM0NjksImV4cCI6MTYxNTM5NDA2OX0.EdKCi2d44hUfKKipsglMAEj0h9tEdsebgiXwgjxIi1fqlj9wB2LQTVVqhWi7gCYV-Esuj8pfGG3X9YbZtriJ0A",
+        Test.all, Valid.all, EC_PUBKEY, EC_PRIVKEY,
+        `{"foo":42}`,
+        "eyJhbGciOiJFUzI1NiJ9.eyJmb28iOjQyfQ.R_MeWV0nLqRcNk9OrczuhykhKJn2wBZIgmwF87TivMlLGk2KB4Ekec9aXz0dOxBfYQflP6PwdSNjgLdYMECwRA"
     ),
-
-// `-----BEGIN EC PRIVATE KEY-----
-// MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
-// AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
-// 5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
-// -----END EC PRIVATE KEY-----`
 ];
 
-void evalTest(K)(auto ref K key, ref immutable(TestCase) tc) @safe
+void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
 {
-    import std.stdio;
+    import std.algorithm : countUntil;
+    import std.range : retro;
+    import std.stdio : writeln;
     scope (success) writeln("Test case PASSED: ", tc.name);
     scope (failure) writeln("Test case FAILED: ", tc.name);
 
     ubyte[512] buf;
     if (tc.test & Test.decode)
     {
-        assert(key.decode(tc.token, buf[]) == !!(tc.valid & Valid.decode));
+        assert(handler.decode(tc.token, buf[]) == !!(tc.valid & Valid.decode));
         assert(!(tc.valid & Valid.decode) || buf[0..tc.payload.length] == tc.payload);
         if (tc.valid & Valid.decode)
-            assert(key.decode(tc.token, null)); // test validation without payload decode
+            assert(handler.decode(tc.token, null)); // test validation without payload decode
     }
 
     if (tc.test & Test.encode)
     {
-        auto len = key.encode(buf[], tc.payload);
+        immutable len = handler.encode(buf[], tc.payload);
         if (tc.valid & Valid.encode)
         {
             assert(len == tc.token.length);
-            assert(buf[0..len] == tc.token);
+
+            // some algorithms generates different signature, so we check if it's valid and only part vithout the signature equals
+            immutable idx = tc.token.retro.countUntil('.');
+            assert(idx >= 0); // NONE ends with '.'
+
+            if (tc.test & Test.decode)
+                assert(handler.validate(buf[0..len]));
+
+            assert(buf[0..tc.token.length-idx] == tc.token[0..$-idx]);
         }
         else assert(len == -1);
     }
