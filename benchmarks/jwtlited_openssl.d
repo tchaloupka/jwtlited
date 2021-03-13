@@ -63,16 +63,16 @@ int validate(Handler)(ref Handler h, size_t cycles, string token)
 
 int decode(Handler)(ref Handler h, size_t cycles, string token)
 {
-    Appender!(char[]) res;
+    ubyte[512] res;
     foreach (_; 0..cycles)
     {
-        res.clear();
-        if (!jwtlited.jwt.decode(h, token, res)) {
+        if (!jwtlited.jwt.decode(h, token, res[])) {
             writeln("Failed to decode token");
             return 1;
         }
     }
-    writeln(res.data);
+    import core.stdc.string;
+    writeln(cast(char[])res[0..strlen(cast(const(char)*)res.ptr)]);
     return 0;
 }
 
