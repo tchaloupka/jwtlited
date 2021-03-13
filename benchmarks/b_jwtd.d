@@ -1,10 +1,27 @@
 #!/usr/bin/env dub
 /+ dub.sdl:
-    name "bench_jwtd_openssl"
+    name "bench_jwtd"
+    targetType "executable"
+
     dependency "jwtd" version="~>0.4.6"
-    subConfiguration "jwtd" "openssl-1.1"
+
+    configuration "phobos" {
+        targetTane "bench_jwtd_phobos"
+        subConfiguration "jwtd" "phobos"
+    }
+
+    configuration "openssl" {
+        targetName "bench_jwtd_openssl"
+        subConfiguration "jwtd" "openssl-1.1"
+    }
+
+    configuration "botan" {
+        targetName "bench_jwtd_botan"
+        subConfiguration "jwtd" "botan"
+    }
 +/
 
+module bench.jwtd;
 import core.memory;
 import std.conv;
 import std.datetime.stopwatch;

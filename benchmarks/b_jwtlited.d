@@ -1,9 +1,15 @@
 #!/usr/bin/env dub
 /+ dub.sdl:
-    name "bench_jwtlited_openssl"
-    dependency "jwtlited:openssl" path="../"
+    name "bench_jwtlited"
+    targetType "executable"
+
+    configuration "openssl" {
+        targetName "bench_jwtlited_openssl"
+        dependency "jwtlited:openssl" path="../"
+    }
 +/
 
+module bench.jwtlited;
 import core.memory;
 import std.array;
 import std.conv;

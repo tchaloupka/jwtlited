@@ -7,12 +7,12 @@ all: build
 
 .PHONY: build
 build: .dub/packages/fastjwt-1.1.1 .extern/libs/libjwt.a
-	DFLAGS=$(DLFAGS) dub build --single fastjwt.d --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single jwtd_openssl.d --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single jwtd_phobos.d --compiler=$(DC)
-	# DFLAGS=$(DLFAGS) dub build --single jwtd_botan.d --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single jwtlited_openssl.d --compiler=$(DC)
-	DFLAGS="$(DLFAGS) -L=-L.extern/libs" dub build --single libjwt.d --compiler=$(DC)
+	DFLAGS=$(DLFAGS) dub build --single b_fastjwt.d --compiler=$(DC)
+	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c openssl --compiler=$(DC)
+	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c phobos --compiler=$(DC)
+	# DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c botan --compiler=$(DC)
+	DFLAGS=$(DLFAGS) dub build --single b_jwtlited.d -c openssl --compiler=$(DC)
+	DFLAGS="$(DLFAGS) -L=-L.extern/libs" dub build --single b_libjwt.d --compiler=$(DC)
 
 .dub/packages/fastjwt-1.1.1:
 	dub fetch fastjwt@1.1.1 --cache=local
