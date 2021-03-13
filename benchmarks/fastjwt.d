@@ -1,7 +1,8 @@
 #!/usr/bin/env dub
 /+ dub.sdl:
     name "bench_fastjwt"
-    dependency "fastjwt" version="~>1.1.1"
+    // dependency "fastjwt" version="~>1.1.1"
+    dependency "fastjwt" path=".dub/packages/fastjwt-1.1.1/fastjwt" # wrong Base64 decoder workaround
 +/
 
 module bench.fastjwt;

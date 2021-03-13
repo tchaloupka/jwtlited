@@ -18,7 +18,7 @@ import jwtlited.openssl;
 
 enum HMAC_SECRET = "foobarbaz123456";
 enum PAYLOAD = `{"sub":"1234567890","name":"John Doe","iat":1516239022}`;
-enum CYCLES = "500000";
+enum CYCLES = 500_000;
 
 int main()
 {
@@ -92,7 +92,7 @@ int main()
     auto names = benchmarks.map!(a => a.name).array;
     genChart("sizes", "size [MB]", sizes.data, ["size"]);
     genChart("gcusage", "GC memory [MB]", gcusage[].map!(a => a.data).joiner("\n").text, names);
-    genChart("speed", "duration [ms]", speed[].map!(a => a.data).joiner("\n").text, names);
+    genChart("speed", "tokens per second", speed[].map!(a => a.data).joiner("\n").text, names);
 
     return 0;
 }
@@ -142,7 +142,7 @@ void bench(What what)(ref Bench b, string alg, const(char)[] val, string secret)
     else static if (what == What.dec) enum w = "dec";
     else enum w = "enc";
 
-    auto ret = execute([buildNormalizedPath(getcwd, b.path), w, CYCLES, alg, val, secret]);
+    auto ret = execute([buildNormalizedPath(getcwd, b.path), w, CYCLES.to!string, alg, val, secret]);
     if (ret.status != 0) { writefln("Benchmark %s failed: %s", b.name, ret.output); return; }
 
     auto tmp = ret.output.splitLines;
@@ -172,14 +172,16 @@ void bench(What what)(ref Bench b, string alg, const(char)[] val, string secret)
     try ms = tmp[1].to!size_t;
     catch (Exception ex) { writefln("Invalid duration from benchmark %s: %s", b.name, tmp[1]); return; }
 
+    immutable tps = 1_000 * CYCLES / ms;
+
     double gc;
     try gc = tmp[2].to!size_t;
     catch (Exception ex) { writefln("Invalid duration from benchmark %s: %s", b.name, tmp[1]); return; }
     gc = gc / 1024 / 1024; // convert to MB
 
-    static if (what == What.val) { b.val = ms; b.valGC = gc; }
-    else static if (what == What.dec) { b.dec = ms; b.decGC = gc; }
-    else { b.enc = ms; b.encGC = gc; }
+    static if (what == What.val) { b.val = tps; b.valGC = gc; }
+    else static if (what == What.dec) { b.dec = tps; b.decGC = gc; }
+    else { b.enc = tps; b.encGC = gc; }
 }
 
 struct Bench
