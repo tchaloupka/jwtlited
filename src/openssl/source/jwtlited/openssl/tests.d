@@ -11,7 +11,16 @@ import jwtlited.tests;
     static void eval(H)(ref immutable TestCase tc)
     {
         H h;
-        assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+        static if (is(H == HS256Handler) || is(H == HS384Handler) || is(H == HS512Handler))
+            assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+        else
+        {
+            if (tc.test & Test.decode)
+                assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+            if (tc.test & Test.encode)
+                assert(h.loadPKey(tc.pkey) == !!(tc.valid & Valid.key));
+        }
+
         evalTest(h, tc);
     }
 

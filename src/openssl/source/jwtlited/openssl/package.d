@@ -209,7 +209,7 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 
     bool isValid(V, S)(V value, S sign) @trusted if (isToken!V && isToken!S)
     {
-        if (!value.length || !sign.length) return false;
+        if (!value.length || !sign.length || !pubKey) return false;
 
         static if (type == EVP_PKEY_EC)
         {
@@ -260,6 +260,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
     int sign(S, V)(auto ref S sink, auto ref V value) @trusted
     {
         import std.algorithm : copy;
+
+        if (!privKey) return -1;
 
         // Initialize the DigestSign operation using alg
         if (EVP_DigestSignInit(mdctxPriv, null, evp, null, privKey) != 1)
@@ -328,24 +330,12 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
     static assert(isSigner!ES256Handler);
 }
 
+@("ECDSA - Test fail on uninitialized keys")
 @safe unittest
 {
-    auto pkey = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
-AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
-5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
------END EC PRIVATE KEY-----`;
-
-    auto pubkey = `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
-NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
------END PUBLIC KEY-----`;
-
     ES256Handler h;
-    assert(h.loadPKey(pkey));
-    assert(h.loadKey(pubkey));
     char[512] token;
-    auto len = h.encode(token[], `{"foo":42}`);
-    assert(len > 0);
-    assert(h.validate(token[0..len]));
+    immutable len = h.encode(token[], `{"foo":42}`);
+    assert(len < 0);
+    assert(!h.validate("eyJhbGciOiJFUzI1NiJ9.eyJmb28iOjQyfQ.R_MeWV0nLqRcNk9OrczuhykhKJn2wBZIgmwF87TivMlLGk2KB4Ekec9aXz0dOxBfYQflP6PwdSNjgLdYMECwRA"));
 }
