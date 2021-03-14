@@ -15,7 +15,11 @@ There are others like:
 
 ## How to run it yourself
 
-LDC compiler is required, then just enter this directory and hit `make`.
+Tests can be run in a docker container.
+
+* prepare the environment - `make container`
+* enter it's shell - `make shell`
+* execute benchmark - `make`
 
 It generates some textual output with the values and charts in results subfolder.
 

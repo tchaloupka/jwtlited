@@ -1,46 +1,33 @@
 DC = ldc2
 DFLAGS += -release -O3 -boundscheck=off -ffast-math -mcpu=native
+docker_build = docker build . -t jwtbench
 
 .PHONY: all
 all: build
 	./runner.d
 
 .PHONY: build
-build: .dub/packages/fastjwt-1.1.1 .extern/libs/libjwt.a
+build:
 	DFLAGS=$(DLFAGS) dub build --single b_fastjwt.d --compiler=$(DC)
 	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c openssl --compiler=$(DC)
 	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c phobos --compiler=$(DC)
 	# DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c botan --compiler=$(DC)
 	DFLAGS=$(DLFAGS) dub build --single b_jwtlited.d -c openssl --compiler=$(DC)
-	DFLAGS="$(DLFAGS) -L=-L.extern/libs" dub build --single b_libjwt.d --compiler=$(DC)
-
-.dub/packages/fastjwt-1.1.1:
-	dub fetch fastjwt@1.1.1 --cache=local
-	sed -i "s/Base64.decode/Base64URLNoPadding.decode/g" .dub/packages/fastjwt-1.1.1/fastjwt/source/fastjwt/jwt.d
-
-.extern/libs/libjansson.a: .extern/jansson
-	mkdir -p .extern/libs
-	cd .extern/jansson && autoreconf -i && ./configure && make
-	cp .extern/jansson/src/.libs/libjansson.a .extern/libs/
-	strip -g .extern/libs/libjansson.a
-
-.extern/libs/libjwt.a: .extern/libjwt .extern/libs/libjansson.a
-	cd .extern/libjwt && autoreconf -i && JANSSON_LIBS=-L../../libs JANSSON_CFLAGS=-I../../jansson/src ./configure
-	sed -i '/SUBDIRS = .*/c\SUBDIRS = include libjwt' .extern/libjwt/Makefile
-	cd .extern/libjwt && make
-	cp .extern/libjwt/libjwt/.libs/libjwt.a .extern/libs/
-	strip -g .extern/libs/libjwt.a
-
-.extern/jansson:
-	mkdir -p .extern
-	cd .extern && git clone git@github.com:akheron/jansson.git
-
-.extern/libjwt:
-	mkdir -p .extern
-	cd .extern && git clone git@github.com:benmcollins/libjwt.git
+	DFLAGS=$(DLFAGS) dub build --single b_libjwt.d --compiler=$(DC)
 
 .PHONY: clean
 clean:
 	rm -f bench_*
 	rm -rf .dub
-	rm -rf .extern
+
+.PHONY: container
+container:
+	$(docker_build)
+
+.PHONY: rebuildcontainer
+rebuild:
+	$(docker_build) --no-cache
+
+.PHONY: shell
+shell:
+	docker run -it --rm -v $(shell pwd)/..:/src:Z --network="host" jwtbench
