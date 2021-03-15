@@ -136,7 +136,7 @@ void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
     scope (success) writeln("Test case PASSED: ", tc.name);
     scope (failure) writeln("Test case FAILED: ", tc.name);
 
-    ubyte[512] buf;
+    char[512] buf;
     if (tc.test & Test.decode)
     {
         assert(handler.decode(tc.token, buf[]) == !!(tc.valid & Valid.decode));
@@ -186,7 +186,7 @@ void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
     enum tok = "eyJhbGciOiJub25lIn0.eyJmb28iOiJiYXIifQ.";
     enum hdr = `{"alg":"none"}`;
     enum pay = `{"foo":"bar"}`;
-    ubyte[64] bh, bp;
+    char[64] bh, bp;
 
     // decode header and payload
     assert(decode(AnyAlgValidator.init, tok, bh[], bp[]));

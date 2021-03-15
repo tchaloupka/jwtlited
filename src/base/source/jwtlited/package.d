@@ -133,6 +133,7 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
     if(isToken!T && isValidator!V)
 {
     import std.ascii : isAlphaNum, isWhite;
+    import std.range : put;
 
     // get header part
     immutable hlen = (cast(const(ubyte)[])token).countUntil('.');
@@ -144,7 +145,9 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
 
     // TODO: should pass, see simillar: https://issues.dlang.org/show_bug.cgi?id=18168
     // problem only with OutputRange
-    try () @trusted { Base64URLNoPadding.decode(token[0..hlen], hdrBuf); }();
+    hdrBuf.reserve(Base64URLNoPadding.decodeLength(hlen));
+    auto pc = () @trusted { return &hdrBuf[0]; }(); // workaround as Base64.decode doesn't accept char[]
+    try () @trusted { Base64URLNoPadding.decode(token[0..hlen], (cast(ubyte*)pc)[0..hdrBuf.length]); }();
     catch (Exception) return false;
 
     // pure man's JSON parse to find "alg" in the header
@@ -174,12 +177,29 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
 
     // copy header if requested
     static if (!is(HS == typeof(null)))
-        hdrBuf[].copy(headSink);
+    {
+        static if (isArray!HS)
+        {
+            assert(headSink.length >= hdrBuf.length);
+            headSink[0..hdrBuf.length] = hdrBuf[];
+        }
+        else hdrBuf[].put(headSink);
+    }
 
     // decode payload if requested
     static if (!is(PS == typeof(null)))
     {
-        try () @trusted { Base64URLNoPadding.decode(token[hlen+1 .. hlen+plen+1], payloadSink); }(); // TODO: see same problem above
+        static if (isArray!PS && is(ForeachType!PS == char))
+        {
+            auto ps = () @trusted
+            {
+                auto p = payloadSink.ptr;
+                return (cast(ubyte*)p)[0..payloadSink.length];
+            }();
+        }
+        else alias ps = payloadSink;
+
+        try () @trusted { Base64URLNoPadding.decode(token[hlen+1 .. hlen+plen+1], ps); }(); // TODO: see same problem above
         catch (Exception) return false;
     }
 
@@ -215,14 +235,17 @@ bool validate(V, T)(auto ref V validator, T token)
 int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
     if (isSigner!S && isToken!P)
 {
-    import std.algorithm : copy;
+    import std.range : put;
 
     static String tmp;
     tmp.clear();
 
     tmp ~= base64HeaderStrings[signer.signAlg];
     tmp ~= '.';
-    Base64URLNoPadding.encode(payload, tmp);
+    auto idx = tmp.length;
+    tmp.reserve(Base64URLNoPadding.encodeLength(payload.length));
+    auto pc = () @trusted { return (cast(ubyte*)&tmp[idx])[0..Base64URLNoPadding.encodeLength(payload.length)]; }();
+    Base64URLNoPadding.encode(payload, pc);
     tmp ~= '.';
 
     ubyte[512] sigtmp;
@@ -232,8 +255,17 @@ int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
     int res = cast(int)tmp.length;
 
     if (len)
-        res += Base64URLNoPadding.encode(sigtmp[0..len], tmp);
+    {
+        idx = tmp.length;
+        tmp.reserve(Base64URLNoPadding.encodeLength(len));
+        res += Base64URLNoPadding.encode(sigtmp[0..len], tmp[idx..$]).length;
+    }
 
-    tmp[].copy(output);
+    static if (isArray!O)
+    {
+        assert(tmp.length <= output.length);
+        output[0..tmp.length] = tmp[];
+    }
+    else tmp[].put(output);
     return res;
 }
