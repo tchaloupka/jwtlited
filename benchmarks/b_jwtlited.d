@@ -6,6 +6,13 @@
     configuration "openssl" {
         targetName "bench_jwtlited_openssl"
         dependency "jwtlited:openssl" path="../"
+        versions "USE_OPENSSL"
+    }
+
+    configuration "phobos" {
+        targetName "bench_jwtlited_phobos"
+        dependency "jwtlited:phobos" path="../"
+        versions "USE_PHOBOS"
     }
 +/
 
@@ -15,7 +22,8 @@ import std.array;
 import std.conv;
 import std.datetime.stopwatch;
 import std.stdio;
-import jwtlited.openssl;
+version (USE_OPENSSL) import jwtlited.openssl;
+else version (USE_PHOBOS) import jwtlited.phobos;
 
 int main(string[] args)
 {
@@ -62,7 +70,7 @@ int validate(Handler)(ref Handler h, size_t cycles, string token)
 {
     bool res;
     foreach (_; 0..cycles)
-        res = jwtlited.jwt.validate(h, token);
+        res = jwtlited.validate(h, token);
     writeln(res);
     return 0;
 }
@@ -72,7 +80,7 @@ int decode(Handler)(ref Handler h, size_t cycles, string token)
     ubyte[512] res;
     foreach (_; 0..cycles)
     {
-        if (!jwtlited.jwt.decode(h, token, res[])) {
+        if (!jwtlited.decode(h, token, res[])) {
             writeln("Failed to decode token");
             return 1;
         }
@@ -87,7 +95,7 @@ int encode(Handler)(ref Handler h, size_t cycles, string pay)
     char[512] buf;
     int len;
     foreach (_; 0..cycles)
-        len = jwtlited.jwt.encode(h, buf[], pay);
+        len = jwtlited.encode(h, buf[], pay);
     writeln(buf[0..len]);
     return 0;
 }

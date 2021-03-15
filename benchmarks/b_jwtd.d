@@ -6,7 +6,7 @@
     dependency "jwtd" version="~>0.4.6"
 
     configuration "phobos" {
-        targetTane "bench_jwtd_phobos"
+        targetName "bench_jwtd_phobos"
         subConfiguration "jwtd" "phobos"
     }
 

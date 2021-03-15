@@ -7,13 +7,19 @@ all: build
 	./runner.d
 
 .PHONY: build
-build:
-	DFLAGS=$(DLFAGS) dub build --single b_fastjwt.d --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c openssl --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c phobos --compiler=$(DC)
-	# DFLAGS=$(DLFAGS) dub build --single b_jwtd.d -c botan --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single b_jwtlited.d -c openssl --compiler=$(DC)
-	DFLAGS=$(DLFAGS) dub build --single b_libjwt.d --compiler=$(DC)
+build: .dub/packages/fastjwt-1.1.1
+	export DFLAGS="$(DFLAGS)"; \
+	dub build --single b_fastjwt.d --compiler=$(DC); \
+	dub build --single b_jwtd.d -c openssl --compiler=$(DC); \
+	dub build --single b_jwtd.d -c phobos --compiler=$(DC); \
+	dub build --single b_jwtd.d -c botan --compiler=$(DC); \
+	dub build --single b_jwtlited.d -c openssl --compiler=$(DC); \
+	dub build --single b_jwtlited.d -c phobos --compiler=$(DC); \
+	dub build --single b_libjwt.d --compiler=$(DC)
+
+.dub/packages/fastjwt-1.1.1:
+	dub fetch fastjwt@1.1.1 --cache=local
+	sed -i "s/Base64.decode/Base64URLNoPadding.decode/g" .dub/packages/fastjwt-1.1.1/fastjwt/source/fastjwt/jwt.d
 
 .PHONY: clean
 clean:

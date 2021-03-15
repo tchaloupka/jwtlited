@@ -5,8 +5,7 @@ module jwtlited.tests;
 
 version (assert):
 
-import jwtlited.common;
-import jwtlited.jwt;
+import jwtlited;
 
 enum Test
 {

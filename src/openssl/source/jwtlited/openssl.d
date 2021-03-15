@@ -12,7 +12,7 @@ import deimos.openssl.sha;
 
 import core.exception : onOutOfMemoryError;
 
-// some missing symbols
+// some missing OpenSSL symbols
 extern(C) nothrow @nogc
 {
     void EVP_MD_CTX_free(EVP_MD_CTX* ctx);
@@ -30,17 +30,17 @@ alias HS512Handler = HMACImpl!(JWTAlgorithm.HS512);
  */
 private struct HMACImpl(JWTAlgorithm implAlg)
 {
-    private
-    {
-        const(char)[] key;
-        HMAC_CTX ctx;
-        ubyte[SHA512_DIGEST_LENGTH] sigBuf;
-    }
-
     static if (implAlg == JWTAlgorithm.HS256) enum signLen = SHA256_DIGEST_LENGTH;
     else static if (implAlg == JWTAlgorithm.HS384) enum signLen = SHA384_DIGEST_LENGTH;
     else static if (implAlg == JWTAlgorithm.HS512) enum signLen = SHA512_DIGEST_LENGTH;
     else static assert(0, "Unsupprted algorithm for HMAC implementation");
+
+    private
+    {
+        const(char)[] key;
+        HMAC_CTX ctx;
+        ubyte[signLen] sigBuf;
+    }
 
     @disable this(this);
 
@@ -77,7 +77,7 @@ private struct HMACImpl(JWTAlgorithm implAlg)
 
     JWTAlgorithm signAlg() { return implAlg; }
 
-    int sign(S, V)(auto ref S sink, auto ref V value)
+    int sign(S, V)(auto ref S sink, auto ref V value) if (isToken!V)
     {
         import std.algorithm : copy;
         if (!genSignature(value)) return -1;
@@ -87,8 +87,8 @@ private struct HMACImpl(JWTAlgorithm implAlg)
 
     private bool genSignature(V)(V value) @trusted
     {
-        assert(key.length);
-        if (!value.length) return false;
+        assert(key.length, "Secret key not set");
+        if (!key.length || !value.length) return false;
 
         scope (exit) HMAC_Init_ex(&ctx, null, 0, null, null);
 
@@ -209,6 +209,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
 
     bool isValid(V, S)(V value, S sign) @trusted if (isToken!V && isToken!S)
     {
+        version (unittest) {} // no assert behavior is tested in unittest
+        else assert(pubKey, "Public key not set");
         if (!value.length || !sign.length || !pubKey) return false;
 
         static if (type == EVP_PKEY_EC)
@@ -261,6 +263,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
     {
         import std.algorithm : copy;
 
+        version (unittest) {} // no assert behavior is tested in unittest
+        else assert(privKey, "Private key not set");
         if (!privKey) return -1;
 
         // Initialize the DigestSign operation using alg
@@ -338,4 +342,62 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
     immutable len = h.encode(token[], `{"foo":42}`);
     assert(len < 0);
     assert(!h.validate("eyJhbGciOiJFUzI1NiJ9.eyJmb28iOjQyfQ.R_MeWV0nLqRcNk9OrczuhykhKJn2wBZIgmwF87TivMlLGk2KB4Ekec9aXz0dOxBfYQflP6PwdSNjgLdYMECwRA"));
+}
+
+version (unittest) import jwtlited.tests;
+
+@("OpenSSL tests")
+@safe unittest
+{
+    static void eval(H)(ref immutable TestCase tc)
+    {
+        H h;
+        static if (is(H == HS256Handler) || is(H == HS384Handler) || is(H == HS512Handler))
+            assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+        else
+        {
+            if (tc.test & Test.decode)
+                assert(h.loadKey(tc.key) == !!(tc.valid & Valid.key));
+            if (tc.test & Test.encode)
+                assert(h.loadPKey(tc.pkey) == !!(tc.valid & Valid.key));
+        }
+
+        evalTest(h, tc);
+    }
+
+    import core.memory : GC;
+    import std.algorithm : canFind, filter;
+
+    immutable pre = () @trusted { return GC.allocatedInCurrentThread(); }();
+
+    with (JWTAlgorithm)
+    {
+        static immutable testAlgs = [
+            HS256, HS384, HS512,
+            // RS256, RS384, RS512,
+            ES256, ES384, ES512
+        ];
+
+        foreach (tc; testCases.filter!(a => testAlgs.canFind(a.alg)))
+        {
+            final switch (tc.alg)
+            {
+                case none: assert(0);
+                case HS256: eval!HS256Handler(tc); break;
+                case HS384: eval!HS384Handler(tc); break;
+                case HS512: eval!HS512Handler(tc); break;
+
+                case RS256:
+                case RS384:
+                case RS512:
+                    break;
+
+                case ES256: eval!ES256Handler(tc); break;
+                case ES384: eval!ES384Handler(tc); break;
+                case ES512: eval!ES512Handler(tc); break;
+            }
+        }
+    }
+
+    assert((() @trusted { return GC.allocatedInCurrentThread; }() - pre) == 0); // check for no GC allocations
 }

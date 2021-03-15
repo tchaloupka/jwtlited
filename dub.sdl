@@ -7,6 +7,6 @@ targetType "none"
 
 subPackage "src/base"
 subPackage "src/openssl"
-// subPackage "src/phobos"
+subPackage "src/phobos"
 
 dependency ":base" version="*"
