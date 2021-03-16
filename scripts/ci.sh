@@ -11,5 +11,7 @@ if [ "$COVERAGE" = true ]; then
 else
     dub test :base
     dub test :phobos
-    dub test :openssl
+    if ! [ "$MACOS" = true ]; then
+        dub test :openssl
+    fi
 fi
