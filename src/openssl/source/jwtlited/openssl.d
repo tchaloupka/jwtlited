@@ -334,6 +334,40 @@ private struct PEMImpl(JWTAlgorithm implAlg)
     }
 }
 
+///
+@safe unittest
+{
+    import jwtlited.openssl;
+    import std.stdio;
+
+    enum EC_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
+NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END PUBLIC KEY-----`;
+
+    enum EC_PRIVKEY = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
+AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
+5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END EC PRIVATE KEY-----`;
+
+    ES256Handler handler;
+    enum payload = `{"foo":42}`;
+    auto ret = handler.loadPKey(EC_PRIVKEY);
+    assert(ret);
+    char[512] tok;
+    immutable len = handler.encode(tok[], payload);
+    assert(len > 0);
+    writeln("ES256: ", tok[0..len]);
+
+    ret = handler.loadKey(EC_PUBKEY);
+    assert(ret);
+    assert(handler.validate(tok[0..len]));
+    char[32] pay;
+    assert(handler.decode(tok[0..len], pay[]));
+    assert(pay[0..payload.length] == payload);
+}
+
 @safe unittest
 {
     static assert(isValidator!HS256Handler);

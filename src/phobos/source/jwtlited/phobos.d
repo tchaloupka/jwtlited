@@ -66,6 +66,27 @@ private struct HMACImpl(JWTAlgorithm implAlg)
     }
 }
 
+///
+@safe unittest
+{
+    import jwtlited.phobos;
+    import std.stdio;
+
+    HS256Handler handler;
+    enum payload = `{"foo":42}`;
+    bool ret = handler.loadKey("foo bar baz");
+    assert(ret);
+    char[512] tok;
+    immutable len = handler.encode(tok[], payload);
+    assert(len > 0);
+    writeln("HS256: ", tok[0..len]);
+
+    assert(handler.validate(tok[0..len]));
+    char[32] hdr, pay;
+    assert(handler.decode(tok[0..len], hdr[], pay[]));
+    assert(pay[0..payload.length] == payload);
+}
+
 @safe unittest
 {
     static assert(isValidator!HS256Handler);

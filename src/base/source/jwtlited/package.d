@@ -68,6 +68,25 @@ struct NoneHandler
     }
 }
 
+///
+@safe unittest
+{
+    import jwtlited;
+    import std.stdio;
+
+    NoneHandler handler;
+    char[512] token;
+    enum payload = `{"foo":42}`;
+    immutable len = handler.encode(token[], payload);
+    assert(len > 0);
+    writeln("NONE: ", token[0..len]);
+
+    assert(handler.validate(token[0..len]));
+    char[32] pay;
+    assert(handler.decode(token[0..len], pay[]));
+    assert(pay[0..payload.length] == payload);
+}
+
 unittest
 {
     static assert(isValidator!NoneHandler);
