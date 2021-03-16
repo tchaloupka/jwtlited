@@ -58,7 +58,33 @@ int main(string[] args)
                 else if (args[1] == "dec") return h.decode(cycles, args[4]);
                 else if (args[1] == "enc") return h.encode(cycles, args[4]);
                 break;
-            default: writeln("Not implemented algorithm"); return 1;
+            case JWTAlgorithm.RS256:
+                version (USE_OPENSSL) {
+                    RS256Handler h;
+                    if (args[1] == "enc") {
+                        if (!h.loadPKey(args[5])) { writeln("Problem loading secret"); return 1; }
+                    } else {
+                        if (!h.loadKey(args[5])) { writeln("Problem loading secret"); return 1; }
+                    }
+                    if (args[1] == "val") return h.validate(cycles, args[4]);
+                    else if (args[1] == "dec") return h.decode(cycles, args[4]);
+                    else if (args[1] == "enc") return h.encode(cycles, args[4]);
+                    break;
+                }
+            case JWTAlgorithm.ES256:
+                version (USE_OPENSSL) {
+                    ES256Handler h;
+                    if (args[1] == "enc") {
+                        if (!h.loadPKey(args[5])) { writeln("Problem loading secret"); return 1; }
+                    } else {
+                        if (!h.loadKey(args[5])) { writeln("Problem loading secret"); return 1; }
+                    }
+                    if (args[1] == "val") return h.validate(cycles, args[4]);
+                    else if (args[1] == "dec") return h.decode(cycles, args[4]);
+                    else if (args[1] == "enc") return h.encode(cycles, args[4]);
+                    break;
+                }
+            default: writeln("Unsupported algorithm"); return 1;
         }
     }
 

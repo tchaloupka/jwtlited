@@ -25,7 +25,13 @@ int main(string[] args)
     if (args.length != 6) { writeln("Invalid args"); return 1; }
     size_t cycles = args[2].to!size_t;
 
-    JWTAlgorithm alg = args[3].to!JWTAlgorithm;
+    JWTAlgorithm alg;
+    try alg = args[3].to!JWTAlgorithm;
+    catch (Exception ex)
+    {
+        writeln("Unsupported algorithm");
+        return 1;
+    }
 
     {
         StopWatch sw;

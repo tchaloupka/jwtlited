@@ -16,7 +16,57 @@ import std.stdio;
 import std.string;
 import jwtlited.openssl;
 
-enum HMAC_SECRET = "foobarbaz123456";
+static immutable HMAC_SECRET = ["foobarbaz123456"];
+static immutable RSA_SECRET = [
+    `-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA0hZf4ct1tvPkcqM7826L89TwCPBhuycWMn3xT+4MLeUqe51F
+LMSm1VK6k+Ew8jrmQ9T9tOtp2vRJFEhoK/WVAb44Sg0PuX9zDLw8ncgW9jON4q6X
+m9MeJNC2Mb5ogwc72S+kQWNWi3nNR9xrCXmczHfoolVC9/lnU0T+Tp7kj4MZNmSC
+Cx0eACHpkZV5306TAs+FSlOpKgTL9Wazf1i7teTddkhD5Csm/OE5gBqdAQDqO/8q
+aKDpmYJTdrjM8RebBq9eTuc5sp7zzIGH2hjveiBG7+/83dDgLwW5IUV1+EB/VqSx
+jrlurQcH38zYfmXV65QCToJXbF5X3asUluSu9wIDAQABAoIBAQCfXV2qeJ55BBW9
+aFnn1WnQsyzKex6Hy6So9KSDD36pqfdKAgkhZqNvmuvxlZd9iHR37C/wd8u6zihJ
+fIuZHRfFVLh6Y+ITwrxRYtFQlyHj7UOqOurCx6lMIA61OU0qZ+hcXilpeKOD9gdk
+ha2kaF4rNKKB0c+VL9nTbrjChwG2YkneqROL7KyszVHAumU9sZUtaYsxKvwALwZi
+7GStXCa8yFb0AXuTANWzVQt5QsFvIO5GpXjQrmYJM36pwzKNVKBFCqrMrRoQhuwe
+UfXOI/VF1tUM9BhZ78R/ccxBGyklQCJt2wO1GqnWKH1lUDHUTDv//V3kI4TF8Tba
+lEn4l8fhAoGBAPYIVsjDZdi7LTnkXENlUTf+VvWGwM7Upb7QK0LK6rZkJrFeiLfT
+vPd4TDEcNHcWVKz+dZubJ5m1rC8hh4IUsQv5CcZdcQuJ/dINZyPRyNkNU4O+kDmf
+50xemRMm9JwpvJfSRsIzoFizzwNsvYeJpQm5ZbGHdVxM1kQBt0P05Hk/AoGBANqZ
+PWLTcKh942GXDzlr6sg4067neYg5fKMeUU6QsDN5Zf6MmPBNDDVd5+oMTjxRQiSW
+Q4SIqR2ssDDuowBGBSoAirQyTdiQ/lVo4/h9oQJX2fDEQvMsPSaby6MBzl9kSSPz
+fBeqSM5fCt6HpkLvzIwS6AlQ4lFzj3fU7tZ3vuRJAoGAGr6FUIWNCKYwIF7meJ0G
+2yNWqJHhW5pZ+gf+69/K69CvNBCmo/TsUapN/fim61sOEVAH0MZo45iQAv+OD2HY
+bQjBO0LlCvARG0hBse8X+iAst+F7JAhxyCdwVFijtmYDDi3ZazrZb0r8cc7cO2OH
+ASuaFlY3N7VShUn6dfSk8VkCgYB0RawUI9k5lfRbFUlgxpkUNL3Lu422OrWj4d1n
+h6hhSMJKmihDMQg8Xp2brT3z8VjYMyDonvQtN4xkCpqi65uVksI0RMmJVt4hOfCA
+XPpGT8o5uXrO84n3PkkbhDtsG+CXgcxQnh+pvX3/jXGPCxPmsavAQMiQgIIgQB9l
+7j2YGQKBgERkwz7s29PN9jg/9D0UGynxhkvJhIo8EcN42/lrnr4MziHxIHN5CwBv
+oNHVKMZXklzzZ7X2jZcqY5UbTIOwiDonwmjfch8SSHt4L50MIzaCrxzDaEQ//zd6
+qT7bwBrcVfn7JUE8RRk5qEn5Z81Z/4AciYBFbsOowA/1NDhLoCZ5
+-----END RSA PRIVATE KEY-----`,
+    `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0hZf4ct1tvPkcqM7826L
+89TwCPBhuycWMn3xT+4MLeUqe51FLMSm1VK6k+Ew8jrmQ9T9tOtp2vRJFEhoK/WV
+Ab44Sg0PuX9zDLw8ncgW9jON4q6Xm9MeJNC2Mb5ogwc72S+kQWNWi3nNR9xrCXmc
+zHfoolVC9/lnU0T+Tp7kj4MZNmSCCx0eACHpkZV5306TAs+FSlOpKgTL9Wazf1i7
+teTddkhD5Csm/OE5gBqdAQDqO/8qaKDpmYJTdrjM8RebBq9eTuc5sp7zzIGH2hjv
+eiBG7+/83dDgLwW5IUV1+EB/VqSxjrlurQcH38zYfmXV65QCToJXbF5X3asUluSu
+9wIDAQAB
+-----END PUBLIC KEY-----`
+];
+
+static immutable ECDSA_SECRET = [
+    `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
+AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
+5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END EC PRIVATE KEY-----`,
+    `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
+NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END PUBLIC KEY-----`
+];
 enum PAYLOAD = `{"sub":"1234567890","name":"John Doe","iat":1516239022}`;
 enum CYCLES = 500_000;
 
@@ -53,16 +103,30 @@ int main()
 
     // benchmark HS256
     char[512] buf;
-    HS256Handler enc;
-    enc.loadKey(HMAC_SECRET);
-    auto len = enc.encode(buf[], PAYLOAD);
+    HS256Handler hsenc;
+    hsenc.loadKey(HMAC_SECRET[0]);
+    auto len = hsenc.encode(buf[], PAYLOAD);
     assert(len > 0, "Failed to encode token");
-    benchmarks.evaluate("HS256", PAYLOAD, HMAC_SECRET, buf[0..len]);
+    benchmarks.evaluate(CYCLES, "HS256", PAYLOAD, HMAC_SECRET, buf[0..len]);
+
+    // benchmark RS256
+    RS256Handler rsenc;
+    rsenc.loadPKey(RSA_SECRET[0]);
+    len = rsenc.encode(buf[], PAYLOAD);
+    assert(len > 0, "Failed to encode token");
+    benchmarks.evaluate(CYCLES/10, "RS256", PAYLOAD, RSA_SECRET, buf[0..len]);
+
+    // benchmark ES256
+    ES256Handler esenc;
+    esenc.loadPKey(ECDSA_SECRET[0]);
+    len = esenc.encode(buf[], PAYLOAD);
+    assert(len > 0, "Failed to encode token");
+    benchmarks.evaluate(CYCLES/10, "ES256", PAYLOAD, ECDSA_SECRET, buf[0..len]);
 
     return 0;
 }
 
-void evaluate(Bench[] benchmarks, string alg, string pay, string secret, const(char)[] tok)
+void evaluate(Bench[] benchmarks, int cycles, string alg, string pay, in string[] secret, const(char)[] tok)
 {
     struct BenchRes
     {
@@ -97,9 +161,9 @@ void evaluate(Bench[] benchmarks, string alg, string pay, string secret, const(c
     writefln("Benchmarking %s, token: %s", alg, tok);
     foreach (ref b; bench)
     {
-        if (!runBench!(What.val)(b, alg, tok, secret)) { b.ignore = true; continue; }
-        if (!runBench!(What.dec)(b, alg, tok, secret)) { b.ignore = true; continue; }
-        if (!runBench!(What.enc)(b, alg, pay, secret)) { b.ignore = true; continue; }
+        if (!runBench!(What.val)(b, cycles, alg, tok, secret)) { b.ignore = true; continue; }
+        if (!runBench!(What.dec)(b, cycles, alg, tok, secret)) { b.ignore = true; continue; }
+        if (!runBench!(What.enc)(b, cycles, alg, pay, secret)) { b.ignore = true; continue; }
     }
 
     Appender!(BenchRes[]) gcres;
@@ -195,16 +259,24 @@ set grid ytics`(name);
 
 enum What { val, dec, enc }
 
-bool runBench(What what)(ref Bench b, string alg, const(char)[] val, string secret)
+bool runBench(What what)(ref Bench b, int cycles, string alg, const(char)[] val, in string[] secret)
 {
     static if (what == What.val) enum w = "val";
     else static if (what == What.dec) enum w = "dec";
     else enum w = "enc";
 
-    auto ret = execute([buildNormalizedPath(getcwd, b.path), w, CYCLES.to!string, alg, val, secret]);
-    if (ret.status != 0) { writefln("Benchmark %s failed: %s", b.name, ret.output); return false; }
+    static if (what != What.enc) {
+        typeof(execute("")) ret;
+        if (secret.length > 1)
+            ret = execute([buildNormalizedPath(getcwd, b.path), w, cycles.to!string, alg, val, secret[1]]);
+        else
+            ret = execute([buildNormalizedPath(getcwd, b.path), w, cycles.to!string, alg, val, secret[0]]);
+    }
+    else
+        auto ret = execute([buildNormalizedPath(getcwd, b.path), w, cycles.to!string, alg, val, secret[0]]);
 
     auto tmp = ret.output.splitLines;
+    if (ret.status != 0) { writefln("Benchmark %s failed: %s", b.name, tmp.length ? tmp[0] : null); return false; }
     if (tmp.length != 3) { writefln("Unexpected benchmark %s result: %s", b.name, ret.output); return false; }
 
     bool validRes;
@@ -219,7 +291,19 @@ bool runBench(What what)(ref Bench b, string alg, const(char)[] val, string secr
         if (alg == "HS256")
         {
             HS256Handler v;
-            v.loadKey(secret);
+            v.loadKey(secret[0]);
+            validRes = v.validate(tmp[0]);
+        }
+        else if (alg == "RS256")
+        {
+            RS256Handler v;
+            v.loadKey(secret[1]);
+            validRes = v.validate(tmp[0]);
+        }
+        else if (alg == "ES256")
+        {
+            ES256Handler v;
+            v.loadKey(secret[1]);
             validRes = v.validate(tmp[0]);
         }
         else assert(0, "Not implemented");
@@ -231,7 +315,7 @@ bool runBench(What what)(ref Bench b, string alg, const(char)[] val, string secr
     try ms = tmp[1].to!size_t;
     catch (Exception ex) { writefln("Invalid duration from benchmark %s: %s", b.name, tmp[1]); return false; }
 
-    immutable tps = 1_000 * CYCLES / ms;
+    immutable tps = 1_000 * cycles / ms;
 
     double gc;
     try gc = tmp[2].to!size_t;

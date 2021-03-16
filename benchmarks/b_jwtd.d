@@ -53,9 +53,17 @@ int main(string[] args)
             writeln(GC.allocatedInCurrentThread - prevAllocated);
         }
 
-        if (args[1] == "val") return validate(cycles, args[4], args[5]);
-        else if (args[1] == "dec") return decode(cycles, args[4], args[5]);
-        else if (args[1] == "enc") return encode(cycles, alg, args[4], args[5]);
+        try
+        {
+            if (args[1] == "val") return validate(cycles, args[4], args[5]);
+            else if (args[1] == "dec") return decode(cycles, args[4], args[5]);
+            else if (args[1] == "enc") return encode(cycles, alg, args[4], args[5]);
+        }
+        catch (Exception ex)
+        {
+            writeln(ex.msg);
+            return 1;
+        }
     }
 
     writeln("Invalid command: ", args[1]);
@@ -85,7 +93,7 @@ int encode(size_t cycles, JWTAlgorithm alg, string payload, string secret)
     string res;
     JSONValue pay = parseJSON(payload);
     foreach (_; 0..cycles)
-        res = jwtd.jwt.encode(pay, secret);
+        res = jwtd.jwt.encode(pay, secret, alg);
     writeln(res);
     return 0;
 }
