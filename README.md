@@ -129,6 +129,6 @@ assert(pay[0..payload.length] == payload);
 
 For example with HS256:
 
-![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/sizes.png)
+![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_hs256.png)
 
 For more results see [benchmarks](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/README.md)
