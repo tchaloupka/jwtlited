@@ -103,14 +103,17 @@ private struct HMACImpl(JWTAlgorithm implAlg)
     }
 }
 
-alias ES256Handler = ECDSAImpl!(JWTAlgorithm.ES256);
-alias ES384Handler = ECDSAImpl!(JWTAlgorithm.ES384);
-alias ES512Handler = ECDSAImpl!(JWTAlgorithm.ES512);
+alias RS256Handler = PEMImpl!(JWTAlgorithm.RS256);
+alias RS384Handler = PEMImpl!(JWTAlgorithm.RS384);
+alias RS512Handler = PEMImpl!(JWTAlgorithm.RS512);
+alias ES256Handler = PEMImpl!(JWTAlgorithm.ES256);
+alias ES384Handler = PEMImpl!(JWTAlgorithm.ES384);
+alias ES512Handler = PEMImpl!(JWTAlgorithm.ES512);
 
 /**
  * Implementation of ES256, ES384 and ES512 signing algorithms.
  */
-private struct ECDSAImpl(JWTAlgorithm implAlg)
+private struct PEMImpl(JWTAlgorithm implAlg)
 {
     private
     {
@@ -125,11 +128,16 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
             enum type = EVP_PKEY_EC;
             int slen;
         }
-        else static assert(0, "Unsupprted algorithm for ECDSA implementation");
+        else static if (implAlg.among(JWTAlgorithm.RS256, JWTAlgorithm.RS384, JWTAlgorithm.RS512))
+            enum type = EVP_PKEY_RSA;
+        else static assert(0, "Unsupprted algorithm for PEM implementation");
 
         static if (implAlg == JWTAlgorithm.ES256) alias evp = EVP_sha256;
         else static if (implAlg == JWTAlgorithm.ES384) alias evp = EVP_sha384;
         else static if (implAlg == JWTAlgorithm.ES512) alias evp = EVP_sha512;
+        else static if (implAlg == JWTAlgorithm.RS256) alias evp = EVP_sha256;
+        else static if (implAlg == JWTAlgorithm.RS384) alias evp = EVP_sha384;
+        else static if (implAlg == JWTAlgorithm.RS512) alias evp = EVP_sha512;
     }
 
     @disable this(this);
@@ -332,6 +340,8 @@ private struct ECDSAImpl(JWTAlgorithm implAlg)
     static assert(isSigner!HS256Handler);
     static assert(isValidator!ES256Handler);
     static assert(isSigner!ES256Handler);
+    static assert(isValidator!RS256Handler);
+    static assert(isSigner!RS256Handler);
 }
 
 @("ECDSA - Test fail on uninitialized keys")
@@ -374,7 +384,7 @@ version (unittest) import jwtlited.tests;
     {
         static immutable testAlgs = [
             HS256, HS384, HS512,
-            // RS256, RS384, RS512,
+            RS256, RS384, RS512,
             ES256, ES384, ES512
         ];
 
@@ -387,10 +397,9 @@ version (unittest) import jwtlited.tests;
                 case HS384: eval!HS384Handler(tc); break;
                 case HS512: eval!HS512Handler(tc); break;
 
-                case RS256:
-                case RS384:
-                case RS512:
-                    break;
+                case RS256: eval!RS256Handler(tc); break;
+                case RS384: eval!RS384Handler(tc); break;
+                case RS512: eval!RS512Handler(tc); break;
 
                 case ES256: eval!ES256Handler(tc); break;
                 case ES384: eval!ES384Handler(tc); break;

@@ -48,6 +48,44 @@ AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
 5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
 -----END EC PRIVATE KEY-----`;
 
+enum RS_PRIVKEY = `-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA0hZf4ct1tvPkcqM7826L89TwCPBhuycWMn3xT+4MLeUqe51F
+LMSm1VK6k+Ew8jrmQ9T9tOtp2vRJFEhoK/WVAb44Sg0PuX9zDLw8ncgW9jON4q6X
+m9MeJNC2Mb5ogwc72S+kQWNWi3nNR9xrCXmczHfoolVC9/lnU0T+Tp7kj4MZNmSC
+Cx0eACHpkZV5306TAs+FSlOpKgTL9Wazf1i7teTddkhD5Csm/OE5gBqdAQDqO/8q
+aKDpmYJTdrjM8RebBq9eTuc5sp7zzIGH2hjveiBG7+/83dDgLwW5IUV1+EB/VqSx
+jrlurQcH38zYfmXV65QCToJXbF5X3asUluSu9wIDAQABAoIBAQCfXV2qeJ55BBW9
+aFnn1WnQsyzKex6Hy6So9KSDD36pqfdKAgkhZqNvmuvxlZd9iHR37C/wd8u6zihJ
+fIuZHRfFVLh6Y+ITwrxRYtFQlyHj7UOqOurCx6lMIA61OU0qZ+hcXilpeKOD9gdk
+ha2kaF4rNKKB0c+VL9nTbrjChwG2YkneqROL7KyszVHAumU9sZUtaYsxKvwALwZi
+7GStXCa8yFb0AXuTANWzVQt5QsFvIO5GpXjQrmYJM36pwzKNVKBFCqrMrRoQhuwe
+UfXOI/VF1tUM9BhZ78R/ccxBGyklQCJt2wO1GqnWKH1lUDHUTDv//V3kI4TF8Tba
+lEn4l8fhAoGBAPYIVsjDZdi7LTnkXENlUTf+VvWGwM7Upb7QK0LK6rZkJrFeiLfT
+vPd4TDEcNHcWVKz+dZubJ5m1rC8hh4IUsQv5CcZdcQuJ/dINZyPRyNkNU4O+kDmf
+50xemRMm9JwpvJfSRsIzoFizzwNsvYeJpQm5ZbGHdVxM1kQBt0P05Hk/AoGBANqZ
+PWLTcKh942GXDzlr6sg4067neYg5fKMeUU6QsDN5Zf6MmPBNDDVd5+oMTjxRQiSW
+Q4SIqR2ssDDuowBGBSoAirQyTdiQ/lVo4/h9oQJX2fDEQvMsPSaby6MBzl9kSSPz
+fBeqSM5fCt6HpkLvzIwS6AlQ4lFzj3fU7tZ3vuRJAoGAGr6FUIWNCKYwIF7meJ0G
+2yNWqJHhW5pZ+gf+69/K69CvNBCmo/TsUapN/fim61sOEVAH0MZo45iQAv+OD2HY
+bQjBO0LlCvARG0hBse8X+iAst+F7JAhxyCdwVFijtmYDDi3ZazrZb0r8cc7cO2OH
+ASuaFlY3N7VShUn6dfSk8VkCgYB0RawUI9k5lfRbFUlgxpkUNL3Lu422OrWj4d1n
+h6hhSMJKmihDMQg8Xp2brT3z8VjYMyDonvQtN4xkCpqi65uVksI0RMmJVt4hOfCA
+XPpGT8o5uXrO84n3PkkbhDtsG+CXgcxQnh+pvX3/jXGPCxPmsavAQMiQgIIgQB9l
+7j2YGQKBgERkwz7s29PN9jg/9D0UGynxhkvJhIo8EcN42/lrnr4MziHxIHN5CwBv
+oNHVKMZXklzzZ7X2jZcqY5UbTIOwiDonwmjfch8SSHt4L50MIzaCrxzDaEQ//zd6
+qT7bwBrcVfn7JUE8RRk5qEn5Z81Z/4AciYBFbsOowA/1NDhLoCZ5
+-----END RSA PRIVATE KEY-----`;
+
+    enum RS_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0hZf4ct1tvPkcqM7826L
+89TwCPBhuycWMn3xT+4MLeUqe51FLMSm1VK6k+Ew8jrmQ9T9tOtp2vRJFEhoK/WV
+Ab44Sg0PuX9zDLw8ncgW9jON4q6Xm9MeJNC2Mb5ogwc72S+kQWNWi3nNR9xrCXmc
+zHfoolVC9/lnU0T+Tp7kj4MZNmSCCx0eACHpkZV5306TAs+FSlOpKgTL9Wazf1i7
+teTddkhD5Csm/OE5gBqdAQDqO/8qaKDpmYJTdrjM8RebBq9eTuc5sp7zzIGH2hjv
+eiBG7+/83dDgLwW5IUV1+EB/VqSxjrlurQcH38zYfmXV65QCToJXbF5X3asUluSu
+9wIDAQAB
+-----END PUBLIC KEY-----`;
+
 /// Test cases to test correct validation and signature used with all implementations
 immutable TestCase[] testCases = [
     // NONE
@@ -116,6 +154,29 @@ immutable TestCase[] testCases = [
         Test.decode, Valid.key,
         "FOOBARBAZ", null, null,
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.B02AWclotXRccJUoyHFSpYHMfg4gUvy4cvFrqwMracg",
+    ),
+
+    // RSA
+    TestCase(
+        "RS512 - valid",
+        JWTAlgorithm.RS512,
+        Test.all, Valid.all, RS_PUBKEY, RS_PRIVKEY,
+        `{"foo":42}`,
+        "eyJhbGciOiJSUzUxMiJ9.eyJmb28iOjQyfQ.HawDMFOZBczB6PozCDPMG4LVYqiy9UaOghs7-ccfQfOpm8nnUNjIcC7-_bUi_KK7tcKUqPIjnz7aR89szjNu5-CtiAef62xfbsPq6ZCTh0x57GNHHMa1DBYoLkvMeRmbKdFgEcamh6qEIoGiihGoe11O3J1JoX6-bktDHNmHEBAYK1BzyxLo2yYwYBPa6GoxOV-qM1ysX_4FEqIul9EpAahLX1S5H9MYwiWt4e7yhRYyJgLXM2qPNCzXrVG28QcF5dSnDjzzvdi8urScBFmVnFKWhZrQj3VbvwOUkJFbaYd4eN2rzTBNQV2YQjU9KZL0kJMn2AcnTeyG_IBj34E8Ig"
+    ),
+    TestCase(
+        "RS512 - different alg",
+        JWTAlgorithm.RS512,
+        Test.decode, Valid.key, RS_PUBKEY, RS_PRIVKEY,
+        `{"foo":42}`,
+        "eyJhbGciOiJSUzI1NiJ9.eyJmb28iOjQyfQ.BOHqKf2MlxWvUNEm8TQIlJ2XIigRN9Mesgt88VrpbnjPBhi5r3J_82pi-iX60RscddpXkFS5f0YZxB-rDslPaZEh_P12SXN9QCEuqspeh7_uFbZpG0E2RcKpjvs4N4UnOetEVkcn1GxjZoZEkzffH-tNGFlLQeRVyJPuk1D8cH13JsKbpmqGQayQOmlZjYsdM48Yy0Rb5Pcc0tR95zBXtQtkgeBNYNEBN5lfWaLBpTADm-fJV5dw4Hu3qKvOMOzW2CslIsCTq-1c-VT4I6-hSBlhy2GkozhKKtbGS6G4RpunolX5GOaPiqhKcQx12TnBVqotRMfEJKazkZe3MA80QA"
+    ),
+    TestCase(
+        "RS256 - valid",
+        JWTAlgorithm.RS256,
+        Test.all, Valid.all, RS_PUBKEY, RS_PRIVKEY,
+        `{"foo":42}`,
+        "eyJhbGciOiJSUzI1NiJ9.eyJmb28iOjQyfQ.BOHqKf2MlxWvUNEm8TQIlJ2XIigRN9Mesgt88VrpbnjPBhi5r3J_82pi-iX60RscddpXkFS5f0YZxB-rDslPaZEh_P12SXN9QCEuqspeh7_uFbZpG0E2RcKpjvs4N4UnOetEVkcn1GxjZoZEkzffH-tNGFlLQeRVyJPuk1D8cH13JsKbpmqGQayQOmlZjYsdM48Yy0Rb5Pcc0tR95zBXtQtkgeBNYNEBN5lfWaLBpTADm-fJV5dw4Hu3qKvOMOzW2CslIsCTq-1c-VT4I6-hSBlhy2GkozhKKtbGS6G4RpunolX5GOaPiqhKcQx12TnBVqotRMfEJKazkZe3MA80QA"
     ),
 
     // ECDSA
