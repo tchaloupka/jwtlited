@@ -94,7 +94,7 @@ assert(pay[0..payload.length] == payload);
 
 ### `:openssl`
 
-Adds HMAC, RSA and ECDSA algorithms using `openssl` library as a dependency.
+Adds HMAC, RSA and ECDSA algorithms using [openssl](https://code.dlang.org/packages/openssl) library as a dependency.
 
 Sample usage:
 
