@@ -409,10 +409,16 @@ version (unittest) import jwtlited.tests;
         evalTest(h, tc);
     }
 
-    import core.memory : GC;
+    static auto allocatedInCurrentThread() @trusted
+    {
+        import core.memory : GC;
+        static if (__VERSION__ >= 2094) return GC.allocatedInCurrentThread();
+        else return GC.stats().allocatedInCurrentThread;
+    }
+
     import std.algorithm : canFind, filter;
 
-    immutable pre = () @trusted { return GC.allocatedInCurrentThread(); }();
+    immutable pre = allocatedInCurrentThread();
 
     with (JWTAlgorithm)
     {
@@ -442,5 +448,5 @@ version (unittest) import jwtlited.tests;
         }
     }
 
-    assert((() @trusted { return GC.allocatedInCurrentThread; }() - pre) == 0); // check for no GC allocations
+    assert(allocatedInCurrentThread() - pre == 0); // check for no GC allocations
 }
