@@ -1,4 +1,9 @@
 # jwtlited
+[![Actions Status](https://github.com/tchaloupka/jwtlited/workflows/ci/badge.svg)](https://github.com/tchaloupka/jwtlited/actions)
+[![Latest version](https://img.shields.io/dub/v/jwtlited.svg)](https://code.dlang.org/packages/jwtlited)
+[![Dub downloads](https://img.shields.io/dub/dt/jwtlited.svg)](http://code.dlang.org/packages/jwtlited)
+[![codecov](https://codecov.io/gh/tchaloupka/jwtlited/branch/main/graph/badge.svg)](https://codecov.io/gh/tchaloupka/jwtlited)
+[![license](https://img.shields.io/github/license/tchaloupka/jwtlited.svg)](https://github.com/tchaloupka/jwtlited/blob/main/LICENSE)
 
 Fast and lightweight [dlang](https://dlang.org) library to handle [JWT](https://jwt.io) tokens.
 
