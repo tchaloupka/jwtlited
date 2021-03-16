@@ -52,7 +52,11 @@ int validate(size_t cycles, JWTAlgorithm alg, string token, string secret)
     StringBuffer head, pay;
     bool ret;
     foreach (_; 0..cycles)
+    {
+        head.removeAll();
+        pay.removeAll();
         ret = 0 == decodeJWTToken(token, secret, alg, head, pay);
+    }
     writeln(ret);
     return 0;
 }

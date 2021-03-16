@@ -65,8 +65,6 @@ This encodes the token using provided payload and returns it in the expected res
 * **CPU** - AMD Ryzen 7 3700X 8-Core Processor
 * **OS** - Fedora 32
 
-**Note:** jwtd supports phobos, openssl and botan variants. All are added to this benchmark, but botan variant is really slow and others differences aren't visible that much on the charts, so I've commented it out in the makefile.
-
 **Note:** jwtd and libjwt are parsing the header/payload to JSON and so comparison is not completely fair. They have no api to return just the base64 decoded payload as with fastjwt and jwtlited.
 
 **Note:** jwtlited benchmark uses static array as a buffer to decode payload or encode token to. That itself makes about 15% difference. Libjwt can output only to self allocated string or file so it allocates in each step. Faastjwt uses `StringBuffer` and can't use other sink type. Jwtd decodes to JSONValue and encodes to `string`.
@@ -81,10 +79,22 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 #### Performance
 
-![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed.png)
+![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_hs256.png)
+
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| ------:|
+| val |  194855 |      95748 |       484496 |      172294 |          2439024 |          208073 | 266098 |
+| dec |  193573 |      82603 |       304506 |      139004 |          1945525 |          203998 | 173130 |
+| enc |  170183 |      94375 |       467289 |      171115 |          1984126 |          201857 | 219490 |
 
 #### GC memory used
 
 `jwtlited` is not visible there as it doesn't allocate anything on GC.
 
-![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/gcusage.png)
+![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/gcusage_hs256.png)
+
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| ------:|
+| val | 22.8882 |    526.429 |      419.617 |     419.617 |                0 |               0 |      0 |
+| dec | 22.8882 |    946.046 |      839.234 |     839.234 |                0 |               0 |      0 |
+| enc | 22.8889 |    595.099 |      488.287 |     488.287 |                0 |               0 |      0 |
