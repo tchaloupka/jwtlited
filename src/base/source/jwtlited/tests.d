@@ -37,15 +37,30 @@ struct TestCase
     string token;
 }
 
-enum EC_PUBKEY = `-----BEGIN PUBLIC KEY-----
+enum EC256_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBk
 NGyQ+P4bc/RmNEq1NpsogiMB5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
 -----END PUBLIC KEY-----`;
 
-enum EC_PRIVKEY = `-----BEGIN EC PRIVATE KEY-----
+enum EC256_PRIVKEY = `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEILvM6E7mLOdndALDyFc3sOgUTb6iVjgwRBtBwYZngSuwoAoGCCqGSM49
 AwEHoUQDQgAEMlFGAIxe+/zLanxz4bOxTI6daFBkNGyQ+P4bc/RmNEq1NpsogiMB
 5eXC7jUcD/XqxP9HCIhdRBcQHx7aOo3ayQ==
+-----END EC PRIVATE KEY-----`;
+
+enum EC512_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQBb6j/jJ/+D25Ez8GuU3Al+DsnuZXF
+AkU6V2eMMezgJu/6E0+FCUMcLaIi6MAuBo74FE6MSCCW4CQ3MGOG75jy67EBENM7
+xGFOBWlBedku4S7N4cayJbpHVnxc+Z5uK50gchiUripQ1i78wi7W+5WjYYQBUE4l
+4et/HP21c5n4LRCeasw=
+-----END PUBLIC KEY-----`;
+
+enum EC512_PRIVKEY = `-----BEGIN EC PRIVATE KEY-----
+MIHcAgEBBEIATbhPa+N94KjXbTzHx3ujwN+TwLVlQjyxA2e1jp8oYxogg8S/ceXU
+CsS/169A1zf1EYKe7lEYm3LTSXcvdaXzT1ygBwYFK4EEACOhgYkDgYYABAFvqP+M
+n/4PbkTPwa5TcCX4Oye5lcUCRTpXZ4wx7OAm7/oTT4UJQxwtoiLowC4GjvgUToxI
+IJbgJDcwY4bvmPLrsQEQ0zvEYU4FaUF52S7hLs3hxrIlukdWfFz5nm4rnSByGJSu
+KlDWLvzCLtb7laNhhAFQTiXh638c/bVzmfgtEJ5qzA==
 -----END EC PRIVATE KEY-----`;
 
 enum RS_PRIVKEY = `-----BEGIN RSA PRIVATE KEY-----
@@ -183,9 +198,16 @@ immutable TestCase[] testCases = [
     TestCase(
         "ES256 - valid",
         JWTAlgorithm.ES256,
-        Test.all, Valid.all, EC_PUBKEY, EC_PRIVKEY,
+        Test.all, Valid.all, EC256_PUBKEY, EC256_PRIVKEY,
         `{"foo":42}`,
         "eyJhbGciOiJFUzI1NiJ9.eyJmb28iOjQyfQ.R_MeWV0nLqRcNk9OrczuhykhKJn2wBZIgmwF87TivMlLGk2KB4Ekec9aXz0dOxBfYQflP6PwdSNjgLdYMECwRA"
+    ),
+    TestCase(
+        "ES512 - valid",
+        JWTAlgorithm.ES512,
+        Test.all, Valid.all, EC512_PUBKEY, EC512_PRIVKEY,
+        `{"foo":42}`,
+        "eyJhbGciOiJFUzUxMiJ9.eyJmb28iOjQyfQ.AGjGpLTYdQB2U2amD6-zJAWI0buCUiKgu-hT_JJgDmqyXYjSvJRQ3uaWID3DWj5fISsMoFZNdp29Pn8Rzwn4yWXYADX_4H4OLUb-IZ82qDfVgZNVMlygrvevbczGU-v1FpKac5Ov2CC7irEoCgus-kVhgFe2XscCz5T6UxUmn4V59Jc3"
     ),
 ];
 

@@ -225,7 +225,7 @@ private struct PEMImpl(JWTAlgorithm implAlg)
         {
             if (sign.length != slen) return false;
 
-            ubyte[72] sbuf;
+            ubyte[256] sbuf;
             immutable bn_len = slen / 2;
             auto ec_sig_r = BN_bin2bn(sign.ptr, bn_len, null);
             auto ec_sig_s = BN_bin2bn(sign.ptr + bn_len, bn_len, null);

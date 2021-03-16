@@ -28,7 +28,13 @@ To list available curves usable to generate the key:
 openssl ecparam -list_curves
 ```
 
-To generate EC key to be used with ECDSA algorithm.
+These should work for ESxxx (see [RFC7518](https://tools.ietf.org/html/rfc7518#section-3.1)):
+
+* prime256v1 - for ES256
+* secp384r1 - for ES384
+* secp521r1 - for ES512
+
+To generate EC key to be used with ECDSA algorithm (ES512).
 
 ```BASH
 openssl ecparam -name secp521r1 -genkey -noout -out eckey.pem
