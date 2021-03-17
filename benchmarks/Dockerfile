@@ -2,8 +2,8 @@ FROM debian:testing
 
 RUN apt update \
     && apt install -y --no-install-recommends \
-       curl wget xz-utils build-essential gnuplot-nox autoconf libtool pkg-config libssl-dev \
-       libcurl4 zlib1g-dev git cmake \
+       curl wget xz-utils build-essential gnuplot-nox autoconf automake libtool pkg-config libssl-dev \
+       libcurl4 zlib1g-dev git ca-certificates cmake \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # LDC compiler
