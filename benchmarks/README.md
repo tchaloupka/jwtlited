@@ -7,7 +7,7 @@ This directory contains benchmarks of various JWT parsers.
 * [jwtd](https://code.dlang.org/packages/jwtd) - most used dlang JWT lib
 * [fastjwt](https://code.dlang.org/packages/fastjwt) - alternative with much less GC usage, but phobos only
 * [libjwt](https://github.com/benmcollins/libjwt)  - most liked C library on [jwt.io](https://jwt.io) to have some comparison with other languages
-* [l8w8jwt](https://github.com/GlitchedPolygons/l8w8jwt) - another neat C library
+* [l8w8jwt](https://github.com/GlitchedPolygons/l8w8jwt) - another neat C library that uses [MbedTLS](https://tls.mbed.org/) instead of OpenSSL
 
 There are other D libraries like:
 
@@ -98,21 +98,21 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_hs256.png)
 
-|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | libjwt |
-|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| ------:|
-| val |  194855 |      95748 |       484496 |      172294 |          2439024 |          208073 | 266098 |
-| dec |  193573 |      82603 |       304506 |      139004 |          1945525 |          203998 | 173130 |
-| enc |  170183 |      94375 |       467289 |      171115 |          1984126 |          201857 | 219490 |
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| -------:| ------:|
+| val |  200000 |      93879 |       461680 |      167785 |          2155172 |          206526 |  391236 | 263574 |
+| dec |  200000 |      81873 |       287852 |      138657 |          1992031 |          203998 |  399680 | 175070 |
+| enc |  172592 |      92661 |       451671 |      168123 |          2049180 |          207382 |  134661 | 217770 |
 
 #### GC memory used
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/gcusage_hs256.png)
 
-|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | libjwt |
-|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| ------:|
-| val | 22.8882 |    526.429 |      419.617 |     419.617 |                0 |               0 |      0 |
-| dec | 22.8882 |    946.046 |      839.234 |     839.234 |                0 |               0 |      0 |
-| enc | 22.8889 |    595.099 |      488.287 |     488.287 |                0 |               0 |      0 |
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| -------:| ------:|
+| val | 22.8882 |    526.429 |      419.617 |     419.617 |                0 |               0 |       0 |      0 |
+| dec | 22.8882 |    946.046 |      839.234 |     839.234 |                0 |               0 |       0 |      0 |
+| enc | 22.8889 |    595.099 |      488.287 |     488.287 |                0 |               0 |       0 |      0 |
 
 ### RSA RS256 signature
 
@@ -120,11 +120,11 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_rs256.png)
 
-|     | jwtd openssl | jwtlited openssl | libjwt |
-|:---:| ------------:| ----------------:| ------:|
-| val |        32113 |            59523 |  31152 |
-| dec |        31230 |            59101 |  29463 |
-| enc |         1165 |             1926 |   1157 |
+|     | jwtd openssl | jwtlited openssl | l8w8jwt | libjwt |
+|:---:| ------------:| ----------------:| -------:| ------:|
+| val |        31969 |            58754 |   15752 |  31367 |
+| dec |        31055 |            59453 |   15873 |  29052 |
+| enc |         1150 |             1890 |     380 |   1143 |
 
 ### ECDSA ES256 signature
 
@@ -132,8 +132,8 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_es256.png)
 
-|     | jwtlited openssl | libjwt |
-|:---:| ----------------:| ------:|
-| val |            17421 |  12373 |
-| dec |            17488 |  12056 |
-| enc |            49751 |  21303 |
+|     | jwtlited openssl | l8w8jwt | libjwt |
+|:---:| ----------------:| -------:| ------:|
+| val |            17111 |     471 |  12333 |
+| dec |            16989 |     470 |  12042 |
+| enc |            48590 |     932 |  21997 |
