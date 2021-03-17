@@ -286,3 +286,44 @@ void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
     // invalid base64 signature
     assert(!validate(AnyAlgValidator.init, "eyJhbGciOiJub25lIn0.eyJmb28iOiJiYXIifQ.blabla!"));
 }
+
+@("Sink tests")
+@safe unittest
+{
+    NoneHandler none;
+    enum tok = "eyJhbGciOiJub25lIn0.eyJmb28iOiJiYXIifQ.";
+    enum pay = `{"foo":"bar"}`;
+    enum hdr = `{"alg":"none"}`;
+
+    // char array
+    {
+        char[512] hbuf, pbuf, tbuf;
+        assert(none.decode(tok, hbuf[], pbuf[]));
+        assert(hbuf[0..hdr.length] == hdr);
+        assert(pbuf[0..pay.length] == pay);
+        assert(none.encode(tbuf[], pay) > 0);
+        assert(tbuf[0..tok.length] == tok);
+    }
+
+    // appender
+    {
+        import std.array : Appender;
+        Appender!string hbuf, pbuf, tbuf;
+        assert(none.decode(tok, hbuf, pbuf));
+        assert(hbuf.data == hdr);
+        assert(pbuf.data == pay);
+        assert(none.encode(tbuf, pay) > 0);
+        assert(tbuf.data == tok);
+    }
+
+    // String from bc.string
+    {
+        import bc.string : String;
+        String hbuf, pbuf, tbuf;
+        assert(none.decode(tok, hbuf, pbuf));
+        assert(hbuf == hdr);
+        assert(pbuf == pay);
+        assert(none.encode(tbuf, pay) > 0);
+        assert(tbuf == tok);
+    }
+}

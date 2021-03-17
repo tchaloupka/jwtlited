@@ -182,7 +182,10 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
             assert(headSink.length >= hdrBuf.length);
             headSink[0..hdrBuf.length] = hdrBuf[];
         }
-        else hdrBuf[].put(headSink);
+        else static if (__traits(compiles, headSink.put(hdrBuf[])))
+            headSink.put(hdrBuf[]);
+        else
+            hdrBuf[].copy(headSink);
     }
 
     // decode payload if requested
@@ -280,7 +283,10 @@ int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
         assert(tmp.length <= output.length);
         output[0..tmp.length] = tmp[];
     }
-    else tmp[].put(output);
+    else static if (__traits(compiles, output.put(tmp[])))
+        output.put(tmp[]);
+    else
+        tmp[].copy(output);
     return res;
 }
 
