@@ -6,6 +6,7 @@ import std.string;
 import std.traits;
 import bc.string.string;
 
+/// Supported algorithms
 enum JWTAlgorithm
 {
     none,
@@ -18,28 +19,6 @@ enum JWTAlgorithm
     ES256,
     ES384,
     ES512
-}
-
-template isToken(T)
-{
-    import std.traits : isArray, Unqual, ForeachType;
-    enum isToken = isArray!T && is(Unqual!(ForeachType!T) : char);
-}
-
-unittest
-{
-    static assert(isToken!string);
-    static assert(isToken!(ubyte[]));
-}
-
-template isValidator(V)
-{
-    enum isValidator = __traits(hasMember, V, "isValidAlg") && __traits(hasMember, V, "isValid");
-}
-
-template isSigner(S)
-{
-    enum isSigner = __traits(hasMember, S, "signAlg") && __traits(hasMember, S, "sign");
 }
 
 /**
@@ -95,6 +74,7 @@ unittest
 
 /**
  * Validator that accepts any JWT algorithm and ignores it's signature at all.
+ * Can be used to decode token without it's signature validation.
  */
 struct AnyAlgValidator
 {
@@ -149,7 +129,7 @@ shared static this()
  * Note: Only compact encoded JWS format is supported.
  */
 bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, auto ref PS payloadSink)
-    if(isToken!T && isValidator!V)
+    if (isToken!T && isValidator!V)
 {
     import std.ascii : isAlphaNum, isWhite;
     import std.range : put;
@@ -235,12 +215,27 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
     return validator.isValid(token[0..hlen+plen+1], sig);
 }
 
+/// ditto
 bool decode(V, T, S)(auto ref V validator, T token, auto ref S payloadSink)
-    if(isToken!T && isValidator!V)
+    if (isToken!T && isValidator!V)
 {
     return decode(validator, token, null, payloadSink);
 }
 
+/**
+ * Decodes token payload without signature validation.
+ * Only token header is checked for any "alg" and basic token structure is validated.
+ */
+bool decodePayload(T, S)(T token, auto ref S payloadSink)
+    if (isToken!T)
+{
+    return decode(AnyAlgValidator.init, token, null, payloadSink);
+}
+
+/**
+ * Validates token format and signature with a provided validator.
+ * It doesn't base64 decode the payload.
+ */
 bool validate(V, T)(auto ref V validator, T token)
 {
     return decode(validator, token, null, null);
@@ -287,4 +282,26 @@ int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
     }
     else tmp[].put(output);
     return res;
+}
+
+template isToken(T)
+{
+    import std.traits : isArray, Unqual, ForeachType;
+    enum isToken = isArray!T && is(Unqual!(ForeachType!T) : char);
+}
+
+unittest
+{
+    static assert(isToken!string);
+    static assert(isToken!(ubyte[]));
+}
+
+template isValidator(V)
+{
+    enum isValidator = __traits(hasMember, V, "isValidAlg") && __traits(hasMember, V, "isValid");
+}
+
+template isSigner(S)
+{
+    enum isSigner = __traits(hasMember, S, "signAlg") && __traits(hasMember, S, "sign");
 }
