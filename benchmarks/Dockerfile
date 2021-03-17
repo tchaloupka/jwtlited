@@ -1,9 +1,10 @@
 FROM debian:testing
 
 RUN apt update \
-    && apt install -y curl wget xz-utils build-essential gnuplot autoconf libtool pkg-config libssl-dev libmbedtls-dev \
+    && apt install -y --no-install-recommends \
+       curl wget xz-utils build-essential gnuplot-nox autoconf libtool pkg-config libssl-dev \
        libcurl4 zlib1g-dev git cmake \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # LDC compiler
 # https://github.com/ldc-developers/ldc/releases
@@ -28,6 +29,16 @@ RUN git clone https://github.com/benmcollins/libjwt.git \
     && sed -i '/SUBDIRS = .*/c\SUBDIRS = include libjwt' Makefile \
     && make && make install \
     && cd .. && rm -rf libjwt
+
+# l8w8jwt
+RUN git clone --recursive https://github.com/GlitchedPolygons/l8w8jwt.git \
+    && cd l8w8jwt  \
+    && mkdir -p build && cd build \
+    && cmake -DBUILD_SHARED_LIBS=Off -DL8W8JWT_PACKAGE=On -DCMAKE_BUILD_TYPE=Release .. \
+    && cmake --build . --config Release \
+    && cp l8w8jwt/bin/release/libl8w8jwt.a /usr/local/lib/ \
+    && cp mbedtls/library/*.a /usr/local/lib/ \
+    && cd ../.. && rm -rf l8w8jwt
 
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 WORKDIR /src/benchmarks

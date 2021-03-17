@@ -1,5 +1,5 @@
 DC = ldc2
-DFLAGS += -release -O3 -boundscheck=off -ffast-math -mcpu=native
+DFLAGS += -release -O3 -boundscheck=off -ffast-math -mcpu=native -L-L/usr/local/lib
 docker_build = docker build . -t jwtbench
 
 .PHONY: all
@@ -15,6 +15,7 @@ build: .dub/packages/fastjwt-1.1.1
 	dub build --single b_jwtd.d -c botan --compiler=$(DC); \
 	dub build --single b_jwtlited.d -c openssl --compiler=$(DC); \
 	dub build --single b_jwtlited.d -c phobos --compiler=$(DC); \
+	dub build --single b_l8w8jwt.d --compiler=$(DC); \
 	dub build --single b_libjwt.d --compiler=$(DC)
 
 .dub/packages/fastjwt-1.1.1:

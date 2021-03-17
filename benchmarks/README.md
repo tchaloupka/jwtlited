@@ -7,8 +7,9 @@ This directory contains benchmarks of various JWT parsers.
 * [jwtd](https://code.dlang.org/packages/jwtd) - most used dlang JWT lib
 * [fastjwt](https://code.dlang.org/packages/fastjwt) - alternative with much less GC usage, but phobos only
 * [libjwt](https://github.com/benmcollins/libjwt)  - most liked C library on [jwt.io](https://jwt.io) to have some comparison with other languages
+* [l8w8jwt](https://github.com/GlitchedPolygons/l8w8jwt) - another neat C library
 
-There are others like:
+There are other D libraries like:
 
 * [jwt](https://code.dlang.org/packages/jwt) - repository is archived and it's slower than jwtd
 * [hunt-jwt](https://code.dlang.org/packages/hunt-jwt) - alpha stage, seems to be heavily inspired by jwt
