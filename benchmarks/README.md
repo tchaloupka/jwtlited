@@ -98,21 +98,21 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_hs256.png)
 
-|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
-|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| -------:| ------:|
-| val |  200000 |      93879 |       461680 |      167785 |          2155172 |          206526 |  391236 | 263574 |
-| dec |  200000 |      81873 |       287852 |      138657 |          1992031 |          203998 |  399680 | 175070 |
-| enc |  172592 |      92661 |       451671 |      168123 |          2049180 |          207382 |  134661 | 217770 |
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited gnutls | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ---------------:| ----------------:| ---------------:| -------:| ------:|
+| val |  196772 |      93861 |       486854 |      169319 |         2040816 |          2369668 |          205676 |  394944 | 266240 |
+| dec |  200803 |      82304 |       292226 |      136836 |         1805054 |          2066115 |          203500 |  388500 | 172950 |
+| enc |  173310 |      91793 |       460829 |      168293 |         1923076 |          2136752 |          201857 |  131027 | 216076 |
 
 #### GC memory used
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/gcusage_hs256.png)
 
-|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
-|:---:| -------:| ----------:| ------------:| -----------:| ----------------:| ---------------:| -------:| ------:|
-| val | 22.8882 |    526.429 |      419.617 |     419.617 |                0 |               0 |       0 |      0 |
-| dec | 22.8882 |    946.046 |      839.234 |     839.234 |                0 |               0 |       0 |      0 |
-| enc | 22.8889 |    595.099 |      488.287 |     488.287 |                0 |               0 |       0 |      0 |
+|     | fastjwt | jwtd botan | jwtd openssl | jwtd phobos | jwtlited gnutls | jwtlited openssl | jwtlited phobos | l8w8jwt | libjwt |
+|:---:| -------:| ----------:| ------------:| -----------:| ---------------:| ----------------:| ---------------:| -------:| ------:|
+| val | 22.8882 |    526.429 |      419.617 |     419.617 |               0 |                0 |               0 |       0 |      0 |
+| dec | 22.8882 |    946.046 |      839.234 |     839.234 |               0 |                0 |               0 |       0 |      0 |
+| enc | 22.8889 |    595.099 |      488.287 |     488.287 |               0 |                0 |               0 |       0 |      0 |
 
 ### RSA RS256 signature
 
@@ -120,11 +120,11 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_rs256.png)
 
-|     | jwtd openssl | jwtlited openssl | l8w8jwt | libjwt |
-|:---:| ------------:| ----------------:| -------:| ------:|
-| val |        31969 |            58754 |   15752 |  31367 |
-| dec |        31055 |            59453 |   15873 |  29052 |
-| enc |         1150 |             1890 |     380 |   1143 |
+|     | jwtd openssl | jwtlited gnutls | jwtlited openssl | l8w8jwt | libjwt |
+|:---:| ------------:| ---------------:| ----------------:| -------:| ------:|
+| val |        32383 |           40849 |            58275 |   15757 |  31766 |
+| dec |        31269 |           40387 |            59665 |   15649 |  29922 |
+| enc |         1133 |             723 |             1924 |     379 |   1133 |
 
 ### ECDSA ES256 signature
 
@@ -132,8 +132,8 @@ All benchmark binaries consists pretty much with the same dlang boilerplate (eve
 
 ![results](https://github.com/tchaloupka/jwtlited/blob/main/benchmarks/results/speed_es256.png)
 
-|     | jwtlited openssl | l8w8jwt | libjwt |
-|:---:| ----------------:| -------:| ------:|
-| val |            17111 |     471 |  12333 |
-| dec |            16989 |     470 |  12042 |
-| enc |            48590 |     932 |  21997 |
+|     | jwtlited gnutls | jwtlited openssl | l8w8jwt | libjwt |
+|:---:| ---------------:| ----------------:| -------:| ------:|
+| val |            6182 |            17283 |     474 |  12272 |
+| dec |            6140 |            17464 |     472 |  11893 |
+| enc |           17001 |            49067 |     927 |  22114 |
