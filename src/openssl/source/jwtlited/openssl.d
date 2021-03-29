@@ -79,9 +79,9 @@ private struct HMACImpl(JWTAlgorithm implAlg)
 
     int sign(S, V)(auto ref S sink, auto ref V value) if (isToken!V)
     {
-        import std.algorithm : copy;
+        import std.range : put;
         if (!genSignature(value)) return -1;
-        sigBuf[0..signLen].copy(sink);
+        put(sink, sigBuf[0..signLen]);
         return signLen;
     }
 
@@ -269,11 +269,11 @@ private struct PEMImpl(JWTAlgorithm implAlg)
 
     int sign(S, V)(auto ref S sink, auto ref V value) @trusted
     {
-        import std.algorithm : copy;
+        import std.range : put;
 
         version (unittest) {} // no assert behavior is tested in unittest
         else assert(privKey, "Private key not set");
-        if (!privKey) return -1;
+        if (!value.length || !privKey) return -1;
 
         // Initialize the DigestSign operation using alg
         if (EVP_DigestSignInit(mdctxPriv, null, evp, null, privKey) != 1)
@@ -295,7 +295,7 @@ private struct PEMImpl(JWTAlgorithm implAlg)
         if (EVP_DigestSignFinal(mdctxPriv, &sig[0], &slen) != 1)
             return -1;
 
-        static if (type != EVP_PKEY_EC) sig[0..slen].copy(sink); // just return the signature as is
+        static if (type != EVP_PKEY_EC) put(sink, sig[0..slen]); // just return the signature as is
         else
         {
             // For EC we need to convert to a raw format of R/S.
@@ -327,7 +327,7 @@ private struct PEMImpl(JWTAlgorithm implAlg)
             BN_bn2bin(ec_sig_r, buf.ptr + bn_len - r_len);
             BN_bn2bin(ec_sig_s, buf.ptr + slen - s_len);
 
-            buf[0..slen].copy(sink);
+            put(sink, buf[0..slen]);
         }
 
         return cast(int)slen;

@@ -176,17 +176,7 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
 
     // copy header if requested
     static if (!is(HS == typeof(null)))
-    {
-        static if (isArray!HS)
-        {
-            assert(headSink.length >= hdrBuf.length);
-            headSink[0..hdrBuf.length] = hdrBuf[];
-        }
-        else static if (__traits(compiles, headSink.put(hdrBuf[])))
-            headSink.put(hdrBuf[]);
-        else
-            hdrBuf[].copy(headSink);
-    }
+        put(headSink, hdrBuf[]);
 
     // decode payload if requested
     static if (!is(PS == typeof(null)))
@@ -278,15 +268,7 @@ int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
         res += Base64URLNoPadding.encode(sigtmp[0..len], tmp[idx..$]).length;
     }
 
-    static if (isArray!O)
-    {
-        assert(tmp.length <= output.length);
-        output[0..tmp.length] = tmp[];
-    }
-    else static if (__traits(compiles, output.put(tmp[])))
-        output.put(tmp[]);
-    else
-        tmp[].copy(output);
+    put(output, tmp[]);
     return res;
 }
 

@@ -53,15 +53,14 @@ private struct HMACImpl(JWTAlgorithm implAlg)
 
     int sign(S, V)(auto ref S sink, auto ref V value) if (isToken!V)
     {
-        import std.algorithm : copy;
+        import std.range : put;
 
         assert(key.length, "Secret key not set");
         if (!key.length || !value.length) return false;
 
-        HMAC!SHA(key)
+        put(sink, HMAC!SHA(key)
             .put(cast(const(ubyte)[])value)
-            .finish()[]
-            .copy(sink);
+            .finish()[]);
         return signLen;
     }
 }
