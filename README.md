@@ -43,6 +43,28 @@ dependency "jwtlited:openssl" version=">=1.0.0"
 
 ## Subpackages
 
+Subpackages determines what algorithms are available to use (as each used library supports different set of algorithms).
+
+**Note:** Not all possible algorithms are implemented yet.
+
+| algorithm  | `:base` | `:phobos` | `:openssl` | `:gnutls` |
+| ---------- |:-------:|:---------:|:----------:|:---------:|
+| **none**   | &check; |  &check;  |  &check;   |  &check;  |
+| **HS256**  |         |  &check;  |  &check;   |  &check;  |
+| **HS384**  |         |  &check;  |  &check;   |  &check;  |
+| **HS512**  |         |  &check;  |  &check;   |  &check;  |
+| **PS256**  |         |           |            |           |
+| **PS384**  |         |           |            |           |
+| **PS512**  |         |           |            |           |
+| **RS256**  |         |           |  &check;   |  &check;  |
+| **RS384**  |         |           |  &check;   |  &check;  |
+| **RS512**  |         |           |  &check;   |  &check;  |
+| **ES256**  |         |           |  &check;   |  &check;  |
+| **ES256K** |         |           |            |           |
+| **ES384**  |         |           |  &check;   |  &check;  |
+| **ES512**  |         |           |  &check;   |  &check;  |
+| **edDSA**  |         |           |            |           |
+
 ### `:base`
 
 Base definitions and generic JWT operations.
@@ -129,6 +151,19 @@ char[32] pay;
 assert(handler.decode(tok[0..len], pay[]));
 assert(pay[0..payload.length] == payload);
 ```
+
+### `:gnutls`
+
+Same usage as with `:openssl` but implemented using [GnuTLS](https://gnutls.org/).
+
+At least GnuTLS `v3.5.0` is required.
+
+It has two possible configurations:
+
+* `dynamic` - uses dynamic GnuTLS binding (default)
+* `static` - uses static linking with GnuTLS (libgnutls is required)
+
+Configuration can be specified using `subConfiguration` parameter in `dub.sdl` or `dub.json` project file.
 
 ## Performance
 

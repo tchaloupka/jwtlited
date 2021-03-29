@@ -15,6 +15,7 @@ build: .dub/packages/fastjwt-1.1.1
 	dub build --single b_jwtd.d -c botan --compiler=$(DC); \
 	dub build --single b_jwtlited.d -c openssl --compiler=$(DC); \
 	dub build --single b_jwtlited.d -c phobos --compiler=$(DC); \
+	dub build --single b_jwtlited.d -c gnutls --compiler=$(DC); \
 	dub build --single b_l8w8jwt.d --compiler=$(DC); \
 	dub build --single b_libjwt.d --compiler=$(DC)
 

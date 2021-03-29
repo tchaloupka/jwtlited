@@ -1,0 +1,8 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"bc-string": "1.2.0",
+		"bindbc-gnutls": "1.1.0",
+		"bindbc-loader": "0.3.2"
+	}
+}

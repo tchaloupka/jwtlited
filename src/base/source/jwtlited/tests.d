@@ -216,6 +216,7 @@ void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
     import std.algorithm : countUntil;
     import std.range : retro;
     import std.stdio : writeln;
+    // writeln("Test case: ", tc.name);
     scope (success) writeln("Test case PASSED: ", tc.name);
     scope (failure) writeln("Test case FAILED: ", tc.name);
 

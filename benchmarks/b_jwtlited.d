@@ -14,6 +14,12 @@
         dependency "jwtlited:phobos" path="../"
         versions "USE_PHOBOS"
     }
+
+    configuration "gnutls" {
+        targetName "bench_jwtlited_gnutls"
+        dependency "jwtlited:gnutls" path="../"
+        versions "USE_GNUTLS"
+    }
 +/
 
 module bench.jwtlited;
@@ -24,6 +30,7 @@ import std.datetime.stopwatch;
 import std.stdio;
 version (USE_OPENSSL) import jwtlited.openssl;
 else version (USE_PHOBOS) import jwtlited.phobos;
+else version (USE_GNUTLS) import jwtlited.gnutls;
 
 int main(string[] args)
 {
@@ -59,7 +66,9 @@ int main(string[] args)
                 else if (args[1] == "enc") return h.encode(cycles, args[4]);
                 break;
             case JWTAlgorithm.RS256:
-                version (USE_OPENSSL) {
+                version (USE_PHOBOS) {}
+                else
+                {
                     RS256Handler h;
                     if (args[1] == "enc") {
                         if (!h.loadPKey(args[5])) { writeln("Problem loading secret"); return 1; }
@@ -72,7 +81,9 @@ int main(string[] args)
                     break;
                 }
             case JWTAlgorithm.ES256:
-                version (USE_OPENSSL) {
+                version (USE_PHOBOS) {}
+                else
+                {
                     ES256Handler h;
                     if (args[1] == "enc") {
                         if (!h.loadPKey(args[5])) { writeln("Problem loading secret"); return 1; }
