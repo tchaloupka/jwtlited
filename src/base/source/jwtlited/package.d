@@ -131,7 +131,6 @@ shared static this()
 bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, auto ref PS payloadSink)
     if (isToken!T && isValidator!V)
 {
-    import std.ascii : isAlphaNum, isWhite;
     import std.range : put;
 
     // get header part
@@ -142,29 +141,16 @@ bool decode(V, T, HS, PS)(auto ref V validator, T token, auto ref HS headSink, a
     static String hdrBuf;
     hdrBuf.clear();
 
-    // TODO: should pass, see simillar: https://issues.dlang.org/show_bug.cgi?id=18168
+    // TODO: should pass, see similar: https://issues.dlang.org/show_bug.cgi?id=18168
     // problem only with OutputRange
     hdrBuf.reserve(Base64URLNoPadding.decodeLength(hlen));
     auto pc = () @trusted { return &hdrBuf[0]; }(); // workaround as Base64.decode doesn't accept char[]
     try () @trusted { Base64URLNoPadding.decode(token[0..hlen], (cast(ubyte*)pc)[0..hdrBuf.length]); }();
     catch (Exception) return false;
 
-    // pure man's JSON parse to find "alg" in the header
-    auto algIdx = hdrBuf[].countUntil(`"alg":`);
-    if (algIdx < 0) return false; // alg value is REQUIRED
-    algIdx += `"alg":`.length;
-    while (algIdx < hdrBuf.length && hdrBuf[algIdx].isWhite) algIdx++; // skip possible whitespaces
-    if (algIdx == hdrBuf.length || hdrBuf[algIdx] != '"') return false;
-    auto algStart = ++algIdx;
-    // NOTE: expected only alphanum characters for supported JWT algorithms, but needs to be changed to support JWE
-    while (algIdx < hdrBuf.length && hdrBuf[algIdx].isAlphaNum) algIdx++;
-    if (algIdx == hdrBuf.length || hdrBuf[algIdx] != '"') return false;
-    auto algVal = hdrBuf[algStart..algIdx];
-
-    // get used algorithm
-    immutable salg = algStrings.countUntil(algVal);
-    if (salg < 0) return false;
-    immutable alg = cast(JWTAlgorithm)salg;
+    JWTAlgorithm alg;
+    immutable algret = parseHeaderAlgorithm(hdrBuf[], alg);
+    if (algret != 0) return false;
     if (!validator.isValidAlg(alg)) return false;
 
     // find end of the payload
@@ -237,17 +223,57 @@ bool validate(V, T)(auto ref V validator, T token)
 /**
  * Endodes token using provided Singer algorithm and already prepared payload.
  *
+ * If header is also provided it's checked for correct `alg` header field and added if not set.
+ *
+ * Both header and payload are expected to be a valid json object serialized string.
+ *
  * Returns: -1 on error, otherwise number of characters written to the output.
  */
 int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
     if (isSigner!S && isToken!P)
+{
+    return encodeImpl!false(signer, output, base64HeaderStrings[signer.signAlg], payload);
+}
+
+/// ditto
+int encode(S, O, H, P)(auto ref S signer, auto ref O output, H header, P payload)
+    if (isSigner!S && isToken!H && isToken!P)
+{
+    if (header.length) return encodeImpl!true(signer, output, header, payload);
+    return encodeImpl!false(signer, output, base64HeaderStrings[signer.signAlg], payload);
+}
+
+private int encodeImpl(bool checkHeader, S, O, H, P)(auto ref S signer, auto ref O output, H header, P payload)
+    if (isSigner!S && isToken!H && isToken!P)
 {
     import std.range : put;
 
     static String tmp;
     tmp.clear();
 
-    tmp ~= base64HeaderStrings[signer.signAlg];
+    static if (checkHeader)
+    {
+        assert(header.length);
+        if (header[0] != '{' || header[$-1] != '}') return -1;
+        JWTAlgorithm alg;
+        immutable algret = parseHeaderAlgorithm(header, alg);
+        if (algret < -1) return -1;
+        if (algret == 0 && alg != signer.signAlg) return -1;
+        if (algret == -1)
+        {
+            String hdrtmp;
+            hdrtmp ~= `{"alg":"`;
+            hdrtmp ~= algStrings[signer.signAlg];
+            hdrtmp ~= `",`;
+            hdrtmp ~= header[1..$];
+            tmp.reserve(Base64URLNoPadding.encodeLength(hdrtmp.length));
+            auto phc = () @trusted { return (cast(ubyte*)&tmp[0])[0..Base64URLNoPadding.encodeLength(hdrtmp.length)]; }();
+            Base64URLNoPadding.encode(hdrtmp[], phc);
+        }
+        else tmp ~= header;
+    }
+    else tmp ~= header;
+
     tmp ~= '.';
     auto idx = tmp.length;
     tmp.reserve(Base64URLNoPadding.encodeLength(payload.length));
@@ -272,6 +298,17 @@ int encode(S, O, P)(auto ref S signer, auto ref O output, P payload)
     return res;
 }
 
+unittest
+{
+    NoneHandler none;
+    String buf;
+    immutable ret = encode(none, buf, `{"foo":"bar"}`, `{"baz":42}`);
+    assert(ret);
+
+    import std.stdio;
+    writeln(buf[]);
+}
+
 template isToken(T)
 {
     import std.traits : isArray, Unqual, ForeachType;
@@ -292,4 +329,29 @@ template isValidator(V)
 template isSigner(S)
 {
     enum isSigner = __traits(hasMember, S, "signAlg") && __traits(hasMember, S, "sign");
+}
+
+// returns 0 ok, -1 missing, -2 error, -3 unknown or unsupported alg
+private int parseHeaderAlgorithm(H)(H hdr, out JWTAlgorithm alg)
+    if (isToken!H)
+{
+    import std.ascii : isAlphaNum, isWhite;
+
+    // pure man's JSON parse to find "alg" in the header
+    auto algIdx = hdr.countUntil(`"alg":`);
+    if (algIdx < 0) return -1; // alg value is REQUIRED
+    algIdx += `"alg":`.length;
+    while (algIdx < hdr.length && hdr[algIdx].isWhite) algIdx++; // skip possible whitespaces
+    if (algIdx == hdr.length || hdr[algIdx] != '"') return -2;
+    auto algStart = ++algIdx;
+    // NOTE: expected only alphanum characters for supported JWT algorithms, but needs to be changed to support JWE
+    while (algIdx < hdr.length && hdr[algIdx].isAlphaNum) algIdx++;
+    if (algIdx == hdr.length || hdr[algIdx] != '"') return -2;
+    auto algVal = hdr[algStart..algIdx];
+
+    // get used algorithm
+    immutable salg = algStrings.countUntil(algVal);
+    if (salg < 0) return -3;
+    alg = cast(JWTAlgorithm)salg;
+    return 0;
 }
