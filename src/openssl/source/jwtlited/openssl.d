@@ -4,6 +4,7 @@ public import jwtlited;
 version (assert) import core.stdc.stdio;
 
 import deimos.openssl.ec;
+import deimos.openssl.ecdsa;
 import deimos.openssl.err;
 import deimos.openssl.evp;
 import deimos.openssl.hmac;
@@ -38,7 +39,7 @@ private struct HMACImpl(JWTAlgorithm implAlg)
     private
     {
         const(char)[] key;
-        HMAC_CTX ctx;
+        HMAC_CTX* ctx;
         ubyte[signLen] sigBuf;
     }
 
@@ -46,7 +47,7 @@ private struct HMACImpl(JWTAlgorithm implAlg)
 
     ~this() @trusted
     {
-        HMAC_CTX_reset(&ctx);
+        if (ctx) HMAC_CTX_free(ctx);
     }
 
     bool loadKey(K)(K key) if (isToken!K)
@@ -60,8 +61,13 @@ private struct HMACImpl(JWTAlgorithm implAlg)
             else static if (implAlg == JWTAlgorithm.HS384) alias evp = EVP_sha384;
             else static if (implAlg == JWTAlgorithm.HS512) alias evp = EVP_sha512;
 
-            HMAC_CTX_reset(&ctx);
-            return HMAC_Init_ex(&ctx, this.key.ptr, cast(int)key.length, evp(), null);
+            if (ctx is null)
+            {
+                ctx = HMAC_CTX_new();
+                if (ctx is null) onOutOfMemoryError;
+            }
+            else HMAC_CTX_reset(ctx);
+            return HMAC_Init_ex(ctx, this.key.ptr, cast(int)key.length, evp(), null);
         }();
         if (!ret) return false;
         return true;
@@ -90,13 +96,13 @@ private struct HMACImpl(JWTAlgorithm implAlg)
         assert(key.length, "Secret key not set");
         if (!key.length || !value.length) return false;
 
-        scope (exit) HMAC_Init_ex(&ctx, null, 0, null, null);
+        scope (exit) HMAC_Init_ex(ctx, null, 0, null, null);
 
-        auto ret = HMAC_Update(&ctx, cast(const(ubyte)*)value.ptr, cast(ulong)value.length);
+        auto ret = HMAC_Update(ctx, cast(const(ubyte)*)value.ptr, cast(ulong)value.length);
         if (!ret) return false;
 
         uint slen;
-        ret = HMAC_Final(&ctx, sigBuf.ptr, &slen);
+        ret = HMAC_Final(ctx, sigBuf.ptr, &slen);
         assert(slen == signLen);
         if (!ret) return false;
         return true;
