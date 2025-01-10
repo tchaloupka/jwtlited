@@ -2,9 +2,9 @@ module jwtlited;
 
 import std.algorithm;
 import std.base64;
+import std.range : isInputRange, ElementEncodingType;
 import std.string;
 import std.traits;
-import bc.string.string;
 
 /// Supported algorithms
 enum JWTAlgorithm
@@ -354,4 +354,308 @@ private int parseHeaderAlgorithm(H)(H hdr, out JWTAlgorithm alg)
     if (salg < 0) return -3;
     alg = cast(JWTAlgorithm)salg;
     return 0;
+}
+
+struct String
+{
+    alias C = char;
+    @safe nothrow @nogc:
+
+    private
+    {
+        enum STACK_LEN = 512;
+        size_t len;
+        C[STACK_LEN] stackBuf;
+        C[] buf;
+        bool useStackBuf;
+        alias pay = typeof(this); // to access fields through pay.xx too
+    }
+
+    ~this() pure @trusted
+    {
+        import core.memory : pureFree;
+        if (buf) pureFree(buf.ptr);
+    }
+
+    @disable this(this);
+
+    // constructor used by move
+    private this(C[] sbuf, C[] buf, size_t len)
+    {
+        this.stackBuf[0..sbuf.length] = sbuf[];
+        this.buf = buf;
+        this.len = len;
+    }
+
+    String move() scope @trusted
+    {
+        import std.algorithm : min;
+        auto obuf = buf;
+        auto olen = len;
+        buf = null;
+        len = 0;
+        return String(stackBuf[0..min(STACK_LEN, olen)], obuf, olen);
+    }
+
+    ///
+    String clone() scope
+    {
+        return String(this[]);
+    }
+
+    /**
+     * Constructor for cases when we know prior to the creation total length of the future string.
+     * It preallocates internal buffer with `initialSize`.
+     */
+    this(size_t len) pure
+    {
+        if (len <= STACK_LEN) return; // we can use stack buffer for that
+        pay.buf = () @trusted { return (cast(C*)enforceMalloc(len * C.sizeof))[0..len]; }();
+    }
+
+    this(S)(auto ref scope S str) if (isAcceptableString!S)
+    {
+        put(str);
+    }
+
+    alias data this;
+
+    /**
+     * Access internal string including the reserved block if any.
+     */
+    @property inout(C)[] data() pure inout return
+    {
+        if (!length) return null;
+        if (len <= STACK_LEN) return stackBuf[0..len];
+        assert(pay.buf);
+        return pay.buf[0..pay.len];
+    }
+
+    /// Slicing support for the internal buffer data
+    @property inout(C)[] opSlice() pure inout return
+    {
+        return this.data;
+    }
+
+    /// ditto
+    @property inout(C)[] opSlice(size_t start, size_t end) pure inout return
+    {
+        if (start > length || end > length) assert(0, "Index out of bounds");
+        if (start > end) assert(0, "Invalid slice indexes");
+        return this.data[start .. end];
+    }
+
+    /// Indexed access to the buffer data
+    @property ref C opIndex(size_t idx) pure return
+    {
+        if (idx >= length) assert(0, "Index out of bounds");
+        return this.data[idx];
+    }
+
+    /// opDollar implementation
+    alias length opDollar;
+
+    /// Managed string length
+    @property size_t length() pure const
+    {
+        return len;
+    }
+
+    /// Returns: capacity that can be used without reallocation
+    size_t capacity() pure const
+    {
+        return (buf ? buf.length : STACK_LEN) - pay.len;
+    }
+
+    /**
+     * Reserves space for requested number of characters that also increments string length.
+     * This can be used for example in cases when we need to fill slice of string with some known length data.
+     * To return reserved data, use `dropBack`.
+     */
+    void reserve(size_t sz)
+    {
+        ensureAvail(sz);
+        pay.len += sz;
+    }
+
+    /**
+     * Drops defined amount of characters from the back.
+     */
+    void dropBack(size_t sz)
+    {
+        assert(length >= sz, "Not enough data");
+        if (!sz) return;
+
+        if (len > STACK_LEN && len - sz <= STACK_LEN)
+        {
+            // switch from heap buffer back to stack one
+            len -= sz;
+            stackBuf[0..len] = buf[0..len];
+            return;
+        }
+        pay.len -= sz;
+    }
+
+    /**
+     * Clears content of the data, but keeps internal buffer as is so it can be used to build another string.
+     */
+    void clear() pure
+    {
+        len = 0;
+    }
+
+    alias opOpAssign(string op : "~") = put;
+
+    void put(in C val) pure
+    {
+        if (len + 1 <= STACK_LEN)
+        {
+            stackBuf[len++] = val;
+            return;
+        }
+        ensureAvail(1);
+        pay.buf[pay.len++] = val;
+    }
+
+    void put(S)(auto ref scope S str) if (isAcceptableString!S)
+    {
+        alias CF = Unqual!(ElementEncodingType!S);
+
+        static if (C.sizeof == CF.sizeof && is(typeof(pay.buf[0 .. str.length] = str[])))
+        {
+            if (len + str.length <= STACK_LEN)
+            {
+                stackBuf[len .. len + str.length] = str[];
+                len += str.length;
+                return;
+            }
+
+            ensureAvail(str.length);
+            pay.buf[pay.len .. pay.len + str.length] = str[];
+            pay.len += str.length;
+        }
+        else
+        {
+            // copy range
+
+            // special case when we can determine that it still fits to stack buffer
+            static if (hasLength!S && is(C == CF))
+            {
+                if (pay.len <= STACK_LEN)
+                {
+                    foreach (ch; r.byUTF!(Unqual!C))
+                    {
+                        stackBuf[pay.len++] = ch;
+                    }
+                    return;
+                }
+            }
+
+            size_t nlen = pay.len;
+            static if (hasLength!S) {
+                ensureAvail(str.length);
+                nlen += str.length;
+            }
+            import bc.internal.utf : byUTF;
+            static if (isSomeString!S)
+                auto r = cast(const(CF)[])str;  // because inout(CF) causes problems with byUTF
+            else
+                alias r = str;
+
+            foreach (ch; r.byUTF!(Unqual!C))
+            {
+                static if (!hasLength!S || !is(C == CF))
+                {
+                    ensureAvail(1);
+                    static if (!hasLength!S) nlen++;
+                    else {
+                        if (pay.len == nlen) nlen++;
+                    }
+                }
+                if (nlen + 1 <= STACK_LEN) // we can still use stack buffer
+                {
+                    stackBuf[len++] = ch;
+                    continue;
+                }
+                pay.buf[pay.len++] = ch;
+            }
+            assert(nlen == pay.len);
+        }
+    }
+
+    private void ensureAvail(size_t sz) pure
+    {
+        static if (__VERSION__ >= 2094) pragma(inline, true);
+        else pragma(inline);
+        import core.bitop : bsr;
+        import std.algorithm : max, min;
+
+        if (len + sz <= STACK_LEN) return; // still fits to stack buffer
+        if (buf is null)
+        {
+            immutable l = max(len + sz, STACK_LEN + 64); // allocates at leas 64B over
+            buf = () @trusted { return (cast(C*)enforceMalloc(l * C.sizeof))[0..l]; }();
+            buf[0..len] = stackBuf[0..len]; // copy data from stack buffer,  we'll use heap allocated one from now
+            return;
+        }
+        if (len <= STACK_LEN)
+        {
+            // some buffer is already preallocated, but we're still on stackBuffer and need to move to heap allocated one
+            assert(buf.length > STACK_LEN);
+            buf[0..len] = stackBuf[0..len]; // copy current data from the stack
+        }
+
+        if (len + sz <= buf.length) return; // we can fit in what we've already allocated
+
+        // reallocate buffer
+        // Note: new length calculation taken from std.array.appenderNewCapacity
+        immutable ulong mult = 100 + (1000UL) / (bsr((pay.len + sz)) + 1);
+        immutable l = cast(size_t)(((pay.len + sz) * min(mult, 200) + 99) / 100);
+        // debug printf("realloc %lu -> %lu\n", pay.len, l);
+        pay.buf = () @trusted { return (cast(C*)enforceRealloc(pay.buf.ptr, l * C.sizeof))[0..l]; }();
+    }
+}
+
+// Purified for local use only.
+extern (C) @nogc nothrow pure private
+{
+    pragma(mangle, "malloc") void* fakePureMalloc(size_t) @safe;
+    pragma(mangle, "realloc") void* fakePureRealloc(void* ptr, size_t size) @system;
+}
+
+void* enforceMalloc()(size_t size) @nogc nothrow pure @safe
+{
+    auto result = fakePureMalloc(size);
+    if (!result)
+    {
+        version (D_Exceptions)
+        {
+            import core.exception : onOutOfMemoryError;
+            onOutOfMemoryError;
+        }
+        else assert(0, "Memory allocation failed");
+    }
+    return result;
+}
+
+void* enforceRealloc()(void* ptr, size_t size) @nogc nothrow pure @system
+{
+    auto result = fakePureRealloc(ptr, size);
+    if (!result)
+    {
+        version (D_Exceptions)
+        {
+            import core.exception : onOutOfMemoryError;
+            onOutOfMemoryError;
+        }
+        else assert(0, "Memory allocation failed");
+    }
+    return result;
+}
+
+template isAcceptableString(S)
+{
+    enum isAcceptableString =
+        (isInputRange!S || isSomeString!S) &&
+        isSomeChar!(ElementEncodingType!S);
 }

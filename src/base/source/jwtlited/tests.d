@@ -317,9 +317,8 @@ void evalTest(H)(auto ref H handler, ref immutable(TestCase) tc) @safe
         assert(tbuf.data == tok);
     }
 
-    // String from bc.string
+    // String
     {
-        import bc.string : String;
         String hbuf, pbuf, tbuf;
         assert(none.decode(tok, hbuf, pbuf));
         assert(hbuf == hdr);
